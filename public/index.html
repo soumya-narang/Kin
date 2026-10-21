@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kin · Alexa+ (simulated)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="device">
+  <header class="device-banner">
+    <div><b>Kin</b> · Simulated Alexa+ experience · Kin MCP server + Amazon Bedrock</div>
+    <nav><a href="family.html" target="_blank">Family dashboard ↗</a></nav>
+  </header>
+
+  <main class="stage">
+    <button class="orb" id="orb" aria-label="Tap to talk">
+      <span class="ring"></span><span class="core"></span><span class="mic" id="orbLabel">Tap to talk</span>
+    </button>
+
+    <div class="caption" aria-live="polite">
+      <div class="you" id="you"></div>
+      <div class="kin" id="kin">Good morning. Tap the light, or press space, and talk to Kin.</div>
+    </div>
+
+    <div class="notified" id="notified"></div>
+
+    <form class="composer" id="composer">
+      <input id="text" autocomplete="off" placeholder="Or type what you'd say to Alexa…" />
+      <button type="submit">Send</button>
+    </form>
+
+    <div class="chips" id="chips">
+      <button>Good morning Kin, I slept only about 4 hours</button>
+      <button>I took my Metformin after breakfast</button>
+      <button>I'm feeling dizzy again, the room is spinning a little</button>
+      <button>I think I forgot my BP tablet yesterday</button>
+      <button>Remind me to call Priya at 7 in the evening</button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </main>
+
+  <aside class="trace">
+    <h2>Behind the scenes</h2>
+    <p class="sub">Every MCP tool call Kin makes, live.</p>
+    <div id="turns"></div>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>

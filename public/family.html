@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kin · Family</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="family">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <h1 id="name">Kin</h1>
+        <div class="who" id="who"></div>
+      </div>
+      <nav>
+        <a href="/" target="_blank">Parent's Alexa ↗</a>
+        <button class="btn" id="reset" title="Reload the two-week demo history">Reset demo</button>
+      </nav>
+    </header>
+
+    <div class="grid">
+      <section class="card span-12">
+        <div class="status" id="status"></div>
+      </section>
+
+      <section class="card span-7">
+        <h2>What Kin noticed</h2>
+        <div id="findings"></div>
+      </section>
+
+      <section class="card span-5">
+        <h2>Alerts sent to you</h2>
+        <div id="alerts"></div>
+      </section>
+
+      <section class="card span-12 timeline">
+        <h2>Last 14 days</h2>
+        <div id="timeline"></div>
+        <div class="legend"><span class="l-taken">taken</span><span class="l-partial">partly taken</span><span class="l-missed">missed</span></div>
+      </section>
+
+      <section class="card span-8">
+        <h2>Mood and sleep</h2>
+        <svg class="chart" id="chart" viewBox="0 0 700 140" preserveAspectRatio="none"></svg>
+        <div class="legend"><span style="color:var(--accent)">— mood (1–5)</span><span style="color:#8b6cc7">- - sleep (hours)</span></div>
+      </section>
+
+      <section class="card span-4">
+        <h2>Medicines this week</h2>
+        <div id="adherence"></div>
+      </section>
+
+      <section class="card span-7">
+        <h2>Daily digest</h2>
+        <div class="digest" id="digest"><span class="empty">A short written summary from Kin.</span></div>
+        <button class="btn primary" id="digestBtn" style="margin-top:12px">Write today's digest</button>
+        <h2 style="margin-top:22px">Ask Kin</h2>
+        <form class="ask" id="ask">
+          <input id="askText" placeholder="How has Mum been sleeping this week?" autocomplete="off" />
+          <button class="btn">Ask</button>
+        </form>
+        <div class="answer" id="answer"></div>
+      </section>
+
+      <section class="card span-5">
+        <h2>In their own words</h2>
+        <div id="quotes"></div>
+      </section>
+    </div>
+  </div>
+  <script src="family.js"></script>
+</body>
+</html>
