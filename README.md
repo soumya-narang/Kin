@@ -2,7 +2,7 @@
 
 **An Alexa+ care companion for parents who live alone.**
 
-Amazon retired Alexa Together, its caregiving service, in 2024. The need didn't go away: millions of older adults live alone while their children live in another city or another country. Kin brings that back as an Alexa+ integration built on MCP.
+Millions of older adults live alone while their children live in another city or another country. Kin is an Alexa+ integration, built on MCP, that gives those families a daily, gentle window into how their parent is doing.
 
 The parent just talks to Alexa the way they already do:
 
