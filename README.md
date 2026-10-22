@@ -71,6 +71,15 @@ To inspect the MCP server with any MCP client:
 npm run inspect          # then connect to http://localhost:3000/mcp (Streamable HTTP)
 ```
 
+### Tests
+
+```bash
+npm test            # care engine, escalation and cooldown, file store, and the MCP tools over an in-memory client
+npm run typecheck
+```
+
+The tests need no AWS credentials. They run in CI on every push.
+
 ### Agent provider
 
 `KIN_LLM` selects the model behind the voice agent: `bedrock` (Amazon Bedrock, default), `openai` (any OpenAI-compatible API such as Groq or Gemini, which have free tiers), `anthropic` (Claude API) or `mock` (no cloud). The MCP server, care engine and dashboard are identical in all three.
@@ -88,7 +97,8 @@ npm run inspect          # then connect to http://localhost:3000/mcp (Streamable
    aws sns subscribe --topic-arn <arn> --protocol email --notification-endpoint <family email>
    ```
 4. **Seed:** `npm run seed`
-5. **Host:** the included `Dockerfile` runs on AWS App Runner or ECS. Set `KIN_MCP_TOKEN` so `/mcp` requires a bearer token once it is public. IAM needs `bedrock:InvokeModel`, `dynamodb:GetItem/PutItem/Query/BatchWriteItem` on the table, and `sns:Publish` on the topic.
+5. **Time zone:** set `TZ` to the parent's IANA zone (for example `Asia/Kolkata`). Medication times and the "no check-in today" rule use the server's local time, and hosted containers default to UTC.
+6. **Host:** the included `Dockerfile` runs on AWS App Runner or ECS. Set `KIN_MCP_TOKEN` so `/mcp` requires a bearer token once it is public, and set `KIN_DISABLE_DEMO_RESET=true` so nobody can wipe the care record. The family dashboard and its `/api` routes have no login in this version, so put them behind your own access control before using real data. IAM needs `bedrock:InvokeModel`, `dynamodb:GetItem/PutItem/Query/BatchWriteItem` on the table, and `sns:Publish` on the topic.
 
 ## Design choices
 

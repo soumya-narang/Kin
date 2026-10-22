@@ -164,7 +164,8 @@ $("ask").addEventListener("submit", async (e) => {
 
 $("reset").addEventListener("click", async () => {
   if (!confirm("Reload the two-week demo history? This clears today's conversation and alerts.")) return;
-  await fetch("/api/demo/reset", { method: "POST" });
+  const res = await fetch("/api/demo/reset", { method: "POST" });
+  if (!res.ok) return alert((await res.json().catch(() => ({}))).error || "Reset failed.");
   seenAlerts.clear();
   firstLoad = true;
   $("digest").innerHTML = `<span class="empty">A short written summary from Kin.</span>`;

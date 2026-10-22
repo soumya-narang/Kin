@@ -8,7 +8,9 @@ const LEVELS: CareLevel[] = ["ok", "watch", "alert", "urgent"];
 export const levelRank = (l: CareLevel) => LEVELS.indexOf(l);
 const maxLevel = (a: CareLevel, b: CareLevel) => (levelRank(a) >= levelRank(b) ? a : b);
 
-const RED_FLAGS = /chest pain|chest tight|fell|fall|faint|passed out|can'?t breathe|short(ness)? of breath|stroke|numb|slurred|confus|bleeding|unconscious/i;
+/** Whole words only, so "fall asleep" or "phone number" don't page the family. */
+const RED_FLAGS =
+  /chest pain|chest tight|\b(?:fell|fall(?:en|ing)?)\b(?!\s+asleep)|\bfaint(?:ed|ing)?\b|passed out|can'?t breathe|short(?:ness)? of breath|\bstroke\b|\bnumb(?:ness)?\b|slurred|\bconfus(?:ed|ion)\b|\bbleeding\b|unconscious/i;
 /** Symptoms that can be linked to missed blood-pressure medication */
 const BP_SYMPTOMS = new Set(["dizziness", "headache", "blurred vision", "palpitations"]);
 

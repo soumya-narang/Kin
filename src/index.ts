@@ -50,12 +50,16 @@ app.delete("/mcp", methodNotAllowed);
 
 // ---------- Voice agent (simulated Alexa+) ----------
 
+/** Spoken turns are short; this keeps a stray request from running up model costs */
+const MAX_UTTERANCE_CHARS = 1000;
+
 const mcp = new KinMcpClient(config.mcpUrl || `http://127.0.0.1:${config.port}/mcp`);
 const agent = new KinAgent(mcp);
 
 app.post("/api/talk", async (req, res) => {
   const { text, sessionId, speaker } = req.body as { text?: string; sessionId?: string; speaker?: Speaker };
   if (!text?.trim()) return res.status(400).json({ error: "text is required" });
+  if (text.length > MAX_UTTERANCE_CHARS) return res.status(413).json({ error: `text is limited to ${MAX_UTTERANCE_CHARS} characters` });
   const started = Date.now();
   try {
     const result = await agent.turn(sessionId || randomUUID(), speaker === "family" ? "family" : "parent", text.trim());
@@ -109,6 +113,7 @@ app.get("/api/family/digest", async (_req, res) => {
 });
 
 app.post("/api/demo/reset", async (_req, res) => {
+  if (!config.demoReset) return res.status(403).json({ error: "demo reset is disabled on this deployment" });
   await seed(store);
   res.json({ ok: true });
 });
