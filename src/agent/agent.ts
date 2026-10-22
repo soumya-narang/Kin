@@ -5,7 +5,9 @@ import {
   type Message,
   type Tool,
 } from "@aws-sdk/client-bedrock-runtime";
+import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import { config } from "../config.js";
+import { claudeComplete, claudeTurn } from "./claudeAgent.js";
 import type { KinMcpClient } from "./mcpClient.js";
 import { mockTurn } from "./mockAgent.js";
 
@@ -30,6 +32,7 @@ const HISTORY_TURNS = 8;
 const bedrock = new BedrockRuntimeClient({ region: config.region });
 /** Plain conversation history per session; tool exchanges are not kept, the store is the memory. */
 const sessions = new Map<string, Message[]>();
+const claudeSessions = new Map<string, MessageParam[]>();
 
 function systemPrompt(speaker: Speaker, context: any): string {
   if (speaker === "family") {
@@ -72,14 +75,39 @@ export class KinAgent {
       speaker === "family"
         ? new Set(["get_trends", "get_family_briefing", "schedule_reminder"])
         : new Set(["get_trends", "log_medication", "log_symptom", "log_mood", "log_sleep", "log_note", "notify_family", "schedule_reminder"]);
-    const tools: Tool[] = (await this.mcp.listTools())
-      .filter((t) => allowed.has(t.name))
-      .map((t) => {
-        const { $schema, ...schema } = t.inputSchema;
-        return { toolSpec: { name: t.name, description: t.description, inputSchema: { json: schema as any } } };
-      });
-
+    const mcpTools = (await this.mcp.listTools()).filter((t) => allowed.has(t.name));
     const key = `${speaker}:${sessionId}`;
+
+    if (config.llm === "anthropic") {
+      const history = claudeSessions.get(key) ?? [];
+      const out = await claudeTurn({
+        system: systemPrompt(speaker, context),
+        history,
+        text,
+        tools: mcpTools.map((t) => ({ ...t, inputSchema: withoutSchemaKey(t.inputSchema) })),
+        callTool: (name, input) => this.mcp.call(name, input),
+      });
+      let familyNotified: TurnResult["familyNotified"];
+      let careLevel: string | undefined = (context as any)?.care?.level ?? (context as any)?.level;
+      for (const r of out.results) {
+        traces.push({ name: r.name, input: r.input, output: r.output });
+        if (r.output?.familyNotified) familyNotified = r.output.familyNotified;
+        if (r.output?.care?.level) careLevel = r.output.care.level;
+        if (r.name === "notify_family" && r.output?.sent) {
+          familyNotified = { title: String(r.input.title), level: String(r.input.level) };
+        }
+      }
+      const reply = cleanForSpeech(out.reply);
+      claudeSessions.set(
+        key,
+        [...history, { role: "user" as const, content: text }, { role: "assistant" as const, content: reply || "..." }].slice(-HISTORY_TURNS * 2),
+      );
+      return { reply, tools: traces, familyNotified, careLevel };
+    }
+
+    const tools: Tool[] = mcpTools.map((t) => ({
+      toolSpec: { name: t.name, description: t.description, inputSchema: { json: withoutSchemaKey(t.inputSchema) as any } },
+    }));
     const history = sessions.get(key) ?? [];
     const messages: Message[] = [...history, { role: "user", content: [{ text }] }];
     let familyNotified: TurnResult["familyNotified"];
@@ -146,20 +174,25 @@ export class KinAgent {
         ? `${briefing.headline}. ${briefing.findings.map((f: any) => f.detail).join(" ")}`
         : briefing.headline;
     }
+    if (config.llm === "anthropic") return cleanForSpeech(await claudeComplete(DIGEST_SYSTEM, JSON.stringify(briefing)));
     const res = await bedrock.send(
       new ConverseCommand({
         modelId: config.modelId,
-        system: [
-          {
-            text: "You write a short daily care digest for an adult child about their parent. 3 to 5 sentences, warm and specific, plain text. Lead with how they are, then any pattern worth acting on, then one concrete suggestion. Never diagnose.",
-          },
-        ],
+        system: [{ text: DIGEST_SYSTEM }],
         messages: [{ role: "user", content: [{ text: JSON.stringify(briefing) }] }],
         inferenceConfig: { maxTokens: 300, temperature: 0.4 },
       }),
     );
     return cleanForSpeech((res.output?.message?.content ?? []).map((c) => c.text ?? "").join(" "));
   }
+}
+
+const DIGEST_SYSTEM =
+  "You write a short daily care digest for an adult child about their parent. 3 to 5 sentences, warm and specific, plain text. Lead with how they are, then any pattern worth acting on, then one concrete suggestion. Never diagnose.";
+
+function withoutSchemaKey(schema: Record<string, unknown>) {
+  const { $schema, ...rest } = schema;
+  return rest;
 }
 
 function cleanForSpeech(text: string) {

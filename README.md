@@ -71,6 +71,10 @@ To inspect the MCP server with any MCP client:
 npm run inspect          # then connect to http://localhost:3000/mcp (Streamable HTTP)
 ```
 
+### Agent provider
+
+`KIN_LLM` selects the model behind the voice agent: `bedrock` (Amazon Bedrock, default), `anthropic` (Claude API, set `ANTHROPIC_API_KEY`) or `mock` (no cloud). The MCP server, care engine and dashboard are identical in all three.
+
 ## Run it on AWS
 
 1. **Bedrock:** enable model access for the model in `KIN_MODEL_ID` (default `us.amazon.nova-pro-v1:0`; any Converse model with tool use works) and set `KIN_LLM=bedrock`.
