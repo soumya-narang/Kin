@@ -12,6 +12,7 @@ export const config = {
   llm: (env.KIN_LLM || "bedrock") as "bedrock" | "anthropic" | "openai" | "mock",
   openaiBaseUrl: env.KIN_OPENAI_BASE_URL || "https://api.groq.com/openai/v1",
   openaiApiKey: env.KIN_OPENAI_API_KEY || "",
+  openaiReasoning: env.KIN_OPENAI_REASONING || "",
   openaiModel: env.KIN_OPENAI_MODEL || "llama-3.3-70b-versatile",
   anthropicModel: env.KIN_ANTHROPIC_MODEL || "claude-sonnet-5-5",
   region: env.AWS_REGION || "us-east-1",

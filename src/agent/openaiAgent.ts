@@ -19,13 +19,24 @@ interface ToolCall {
 const MAX_TOOL_ROUNDS = 6;
 
 async function chat(body: Record<string, unknown>) {
-  const res = await fetch(`${config.openaiBaseUrl.replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${config.openaiApiKey}` },
-    body: JSON.stringify({ model: config.openaiModel, ...body }),
-  });
-  if (!res.ok) throw new Error(`LLM request failed (${res.status}): ${(await res.text()).slice(0, 300)}`);
-  return (await res.json()) as { choices: { message: { content: string | null; tool_calls?: ToolCall[] }; finish_reason: string }[] };
+  const payload: Record<string, unknown> = { model: config.openaiModel, ...body };
+  if (config.openaiReasoning) payload.reasoning_effort = config.openaiReasoning;
+  let lastError = "";
+  // Free tiers shed load with 429/503; a short backoff almost always gets through
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(`${config.openaiBaseUrl.replace(/\/$/, "")}/chat/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${config.openaiApiKey}` },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      return (await res.json()) as { choices: { message: { content: string | null; tool_calls?: ToolCall[] }; finish_reason: string }[] };
+    }
+    lastError = `LLM request failed (${res.status}): ${(await res.text()).slice(0, 300)}`;
+    if (![429, 500, 502, 503, 504].includes(res.status)) break;
+    await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
+  }
+  throw new Error(lastError);
 }
 
 export interface OpenAiTurnInput {
@@ -49,7 +60,7 @@ export async function openaiTurn(input: OpenAiTurnInput) {
   const results: { name: string; input: Record<string, unknown>; output: any }[] = [];
 
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-    const res = await chat({ messages, tools, temperature: 0.4, max_tokens: 400 });
+    const res = await chat({ messages, tools, temperature: 0.4, max_tokens: 1024 });
     const msg = res.choices[0]?.message;
     if (!msg) throw new Error("Empty response from the language model");
     const calls = msg.tool_calls ?? [];
@@ -83,7 +94,7 @@ export async function openaiComplete(system: string, user: string): Promise<stri
       { role: "user", content: user },
     ],
     temperature: 0.4,
-    max_tokens: 300,
+    max_tokens: 1024,
   });
   return res.choices[0]?.message.content ?? "";
 }
