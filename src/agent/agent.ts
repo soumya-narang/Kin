@@ -8,6 +8,7 @@ import {
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import { config } from "../config.js";
 import { claudeComplete, claudeTurn } from "./claudeAgent.js";
+import { openaiComplete, openaiTurn, type ChatMessage } from "./openaiAgent.js";
 import type { KinMcpClient } from "./mcpClient.js";
 import { mockTurn } from "./mockAgent.js";
 
@@ -33,6 +34,7 @@ const bedrock = new BedrockRuntimeClient({ region: config.region });
 /** Plain conversation history per session; tool exchanges are not kept, the store is the memory. */
 const sessions = new Map<string, Message[]>();
 const claudeSessions = new Map<string, MessageParam[]>();
+const openaiSessions = new Map<string, ChatMessage[]>();
 
 function systemPrompt(speaker: Speaker, context: any): string {
   if (speaker === "family") {
@@ -77,6 +79,33 @@ export class KinAgent {
         : new Set(["get_trends", "log_medication", "log_symptom", "log_mood", "log_sleep", "log_note", "notify_family", "schedule_reminder"]);
     const mcpTools = (await this.mcp.listTools()).filter((t) => allowed.has(t.name));
     const key = `${speaker}:${sessionId}`;
+
+    if (config.llm === "openai") {
+      const history = openaiSessions.get(key) ?? [];
+      const out = await openaiTurn({
+        system: systemPrompt(speaker, context),
+        history,
+        text,
+        tools: mcpTools.map((t) => ({ ...t, inputSchema: withoutSchemaKey(t.inputSchema) })),
+        callTool: (name, input) => this.mcp.call(name, input),
+      });
+      let familyNotified: TurnResult["familyNotified"];
+      let careLevel: string | undefined = (context as any)?.care?.level ?? (context as any)?.level;
+      for (const r of out.results) {
+        traces.push({ name: r.name, input: r.input, output: r.output });
+        if (r.output?.familyNotified) familyNotified = r.output.familyNotified;
+        if (r.output?.care?.level) careLevel = r.output.care.level;
+        if (r.name === "notify_family" && r.output?.sent) {
+          familyNotified = { title: String(r.input.title), level: String(r.input.level) };
+        }
+      }
+      const reply = cleanForSpeech(out.reply);
+      openaiSessions.set(
+        key,
+        [...history, { role: "user" as const, content: text }, { role: "assistant" as const, content: reply || "..." }].slice(-HISTORY_TURNS * 2),
+      );
+      return { reply, tools: traces, familyNotified, careLevel };
+    }
 
     if (config.llm === "anthropic") {
       const history = claudeSessions.get(key) ?? [];
@@ -174,6 +203,7 @@ export class KinAgent {
         ? `${briefing.headline}. ${briefing.findings.map((f: any) => f.detail).join(" ")}`
         : briefing.headline;
     }
+    if (config.llm === "openai") return cleanForSpeech(await openaiComplete(DIGEST_SYSTEM, JSON.stringify(briefing)));
     if (config.llm === "anthropic") return cleanForSpeech(await claudeComplete(DIGEST_SYSTEM, JSON.stringify(briefing)));
     const res = await bedrock.send(
       new ConverseCommand({

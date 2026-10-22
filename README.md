@@ -73,7 +73,7 @@ npm run inspect          # then connect to http://localhost:3000/mcp (Streamable
 
 ### Agent provider
 
-`KIN_LLM` selects the model behind the voice agent: `bedrock` (Amazon Bedrock, default), `anthropic` (Claude API, set `ANTHROPIC_API_KEY`) or `mock` (no cloud). The MCP server, care engine and dashboard are identical in all three.
+`KIN_LLM` selects the model behind the voice agent: `bedrock` (Amazon Bedrock, default), `openai` (any OpenAI-compatible API such as Groq or Gemini, which have free tiers), `anthropic` (Claude API) or `mock` (no cloud). The MCP server, care engine and dashboard are identical in all three.
 
 ## Run it on AWS
 
