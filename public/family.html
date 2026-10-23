@@ -2,73 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
   <title>Kin · Family</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="family.css" />
 </head>
 <body class="family">
-  <div class="wrap">
-    <header class="top">
-      <div>
-        <h1 id="name">Kin</h1>
-        <div class="who" id="who"></div>
-      </div>
-      <nav>
-        <a href="/" target="_blank">Parent's Alexa ↗</a>
-        <button class="btn" id="reset" title="Reload the two-week demo history">Reset demo</button>
-      </nav>
-    </header>
-
-    <div class="grid">
-      <section class="card span-12">
-        <div class="status" id="status"></div>
-      </section>
-
-      <section class="card span-7">
-        <h2>What Kin noticed</h2>
-        <div id="findings"></div>
-      </section>
-
-      <section class="card span-5">
-        <h2>Alerts sent to you</h2>
-        <div id="alerts"></div>
-      </section>
-
-      <section class="card span-12 timeline">
-        <h2>Last 14 days</h2>
-        <div id="timeline"></div>
-        <div class="legend"><span class="l-taken">taken</span><span class="l-partial">partly taken</span><span class="l-missed">missed</span></div>
-      </section>
-
-      <section class="card span-8">
-        <h2>Mood and sleep</h2>
-        <svg class="chart" id="chart" viewBox="0 0 700 140" preserveAspectRatio="none"></svg>
-        <div class="legend"><span style="color:var(--accent)">— mood (1–5)</span><span style="color:#8b6cc7">- - sleep (hours)</span></div>
-      </section>
-
-      <section class="card span-4">
-        <h2>Medicines this week</h2>
-        <div id="adherence"></div>
-      </section>
-
-      <section class="card span-7">
-        <h2>Daily digest</h2>
-        <div class="digest" id="digest"><span class="empty">A short written summary from Kin.</span></div>
-        <button class="btn primary" id="digestBtn" style="margin-top:12px">Write today's digest</button>
-        <h2 style="margin-top:22px">Ask Kin</h2>
-        <form class="ask" id="ask">
-          <input id="askText" placeholder="How has Mum been sleeping this week?" autocomplete="off" />
-          <button class="btn">Ask</button>
-        </form>
-        <div class="answer" id="answer"></div>
-      </section>
-
-      <section class="card span-5">
-        <h2>In their own words</h2>
-        <div id="quotes"></div>
-      </section>
-    </div>
+  <div class="banner" id="banner" role="status" aria-live="assertive">
+    <div class="app-badge" aria-hidden="true">K</div>
+    <div><div class="t" id="bannerTitle"></div><div class="m" id="bannerMsg"></div></div>
   </div>
+
+  <header class="head">
+    <div class="head-in">
+      <div class="who">
+        <div class="avatar" id="avatar" aria-hidden="true">K</div>
+        <div><h1 id="name">Kin</h1><p id="who">&nbsp;</p></div>
+      </div>
+      <div class="head-actions">
+        <a class="btn press" href="/" target="_blank" rel="noopener"><span class="txt">Open</span>&nbsp;Alexa ↗</a>
+        <button class="btn press" id="reset" title="Reload the two-week demo history">Reset<span class="txt">&nbsp;demo</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="card hero s12 lvl-ok" id="hero" aria-label="Status"></section>
+
+    <section class="card s5" aria-labelledby="hAlerts">
+      <h2 id="hAlerts">Alerts <small id="alertCount"></small></h2>
+      <div id="alerts"></div>
+    </section>
+
+    <section class="card s7" aria-labelledby="hNoticed">
+      <h2 id="hNoticed">What Kin noticed <small>last 7 days</small></h2>
+      <div id="findings"></div>
+    </section>
+
+    <section class="card s12" aria-labelledby="hTimeline">
+      <h2 id="hTimeline">Last 14 days</h2>
+      <div class="tl"><div class="tl-grid" id="timeline"></div></div>
+      <div class="legend">
+        <span><i style="background:var(--ok)"></i>taken</span>
+        <span><i style="background:linear-gradient(90deg,var(--ok) 50%,var(--fill) 50%)"></i>partly</span>
+        <span><i style="background:var(--urgent)"></i>missed</span>
+        <span><i style="background:var(--alert)"></i>symptom reported</span>
+      </div>
+    </section>
+
+    <section class="card s8" aria-labelledby="hMood">
+      <h2 id="hMood">Mood and sleep</h2>
+      <div class="chart-wrap" id="chartWrap"><svg id="chart" role="img" aria-label="Mood and sleep over the last 14 days"></svg><div class="chart-tip" id="tip"></div></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>mood (1 to 5)</span><span><i style="background:#bf5af2"></i>sleep (hours)</span></div>
+    </section>
+
+    <section class="card s4" aria-labelledby="hMeds">
+      <h2 id="hMeds">Medicines <small>this week</small></h2>
+      <div class="rings" id="rings"></div>
+    </section>
+
+    <section class="card s7" aria-labelledby="hDigest">
+      <h2 id="hDigest">Daily digest</h2>
+      <div class="digest" id="digest"><span class="empty">A short written summary from Kin, in plain words.</span></div>
+      <div style="margin-top:14px"><button class="btn primary press" id="digestBtn">Write today's digest</button></div>
+      <div class="divider"></div>
+      <h2>Ask Kin</h2>
+      <div class="thread" id="thread" aria-live="polite"></div>
+      <form class="ask" id="ask" autocomplete="off">
+        <label class="sr-only" for="askText">Ask Kin a question</label>
+        <input id="askText" placeholder="How has she been sleeping this week?" />
+        <button class="go press" aria-label="Ask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
+      </form>
+    </section>
+
+    <section class="card s5" aria-labelledby="hWords">
+      <h2 id="hWords">In their own words</h2>
+      <div class="words" id="quotes"></div>
+    </section>
+  </main>
+
   <script src="family.js"></script>
 </body>
 </html>
