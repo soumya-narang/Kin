@@ -3,88 +3,87 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#04060b" />
-  <title>Kin · Alexa+ (simulated)</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0a0b0e" />
+  <title>Kin</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%232b6a86'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="device.css" />
 </head>
 <body class="device">
-  <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
-
-  <header class="bar glass">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-name">Kin</span>
-      <span class="brand-sub">Simulated Alexa+ device</span>
+  <header class="topbar">
+    <div class="clock">
+      <div class="t" id="clock"></div>
+      <div class="d" id="date"></div>
     </div>
-    <div class="bar-right">
-      <span class="badge" id="provider"><span class="dot-live off" id="providerDot"></span>&nbsp; Connecting…</span>
-      <button class="chip-btn press" id="traceBtn" aria-pressed="false" aria-controls="trace">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
-        Behind the scenes
+    <div class="actions">
+      <button class="ghost" id="traceBtn" aria-expanded="false" aria-controls="sheet">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5h12M4 10h12M4 13.5h7"/></svg>
+        <span class="label">Behind the scenes</span><span class="count" id="count"></span>
       </button>
-      <a class="chip-btn press link" href="family.html" target="_blank" rel="noopener">Family dashboard
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+      <a class="ghost" href="family.html" target="_blank" rel="noopener">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 5H5.8A1.8 1.8 0 0 0 4 6.8v7.4A1.8 1.8 0 0 0 5.8 16h7.4a1.8 1.8 0 0 0 1.8-1.8V12.5M11 4h5v5M16 4l-6.5 6.5"/></svg>
+        <span class="label">Family view</span>
       </a>
     </div>
   </header>
 
-  <div class="toast glass" id="toast" role="status" aria-live="polite">
-    <div class="toast-icon" aria-hidden="true">K</div>
-    <div class="toast-text">
-      <div class="toast-title" id="toastTitle">Family notified</div>
-      <div class="toast-body" id="toastBody"></div>
-    </div>
-  </div>
-
   <main class="stage">
-    <button class="orb" id="orb" data-state="idle" aria-label="Talk to Kin. Tap, or press the space bar.">
-      <span class="orb-glow"></span>
-      <span class="orb-body"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></span>
-      <span class="orb-gloss"></span>
-      <span class="orb-ring"></span>
-    </button>
-    <div class="state-label" id="stateLabel">Tap to talk</div>
+    <div class="orb-wrap">
+      <button class="orb" id="orb" aria-label="Talk to Kin">
+        <span class="halo"></span>
+        <span class="body"><span class="sheen"></span></span>
+        <span class="ripple"></span><span class="ripple"></span>
+      </button>
+      <div class="status-line" id="status" aria-live="polite">Tap to talk</div>
+    </div>
 
     <div class="caption" aria-live="polite">
-      <div class="you" id="you"></div>
-      <div class="kin plain" id="kin">Good morning. I'm here whenever you want to talk.</div>
+      <p class="you swap" id="you"></p>
+      <p class="kin swap" id="kin"></p>
     </div>
 
-    <form class="composer glass" id="composer" autocomplete="off">
-      <label class="sr-only" for="text">Type what you would say to Alexa</label>
-      <input id="text" placeholder="Or type what you'd say to Alexa…" enterkeyhint="send" />
-      <button class="send press" type="submit" aria-label="Send">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
-      </button>
-    </form>
-
-    <div class="suggest">
-      <small>Try saying</small>
-      <div class="chips" id="chips">
-        <button class="press">I took my sugar tablet</button>
-        <button class="press">I slept badly last night, only about four hours</button>
-        <button class="press">I'm feeling dizzy again</button>
-        <button class="press">I think I forgot my BP tablet yesterday</button>
-        <button class="press">Remind me to call Priya at 7 in the evening</button>
-      </div>
+    <div class="notified" id="notified" role="status">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8a4.5 4.5 0 0 1 9 0c0 4 1.5 5 1.5 5h-12s1.5-1 1.5-5ZM8.5 16a1.7 1.7 0 0 0 3 0"/></svg>
+      <span id="notifiedText"></span>
     </div>
-    <div class="hint" id="hint"></div>
   </main>
 
-  <aside class="trace glass" id="trace" aria-label="Behind the scenes">
-    <div class="trace-head">
-      <h2>Behind the scenes</h2>
-      <p>Every tool Kin calls on its MCP server, live.</p>
-      <div class="badges">
-        <span class="badge accent">MCP · Streamable HTTP</span>
-        <span class="badge">Protocol 2025-11-25</span>
-        <span class="badge" id="modelBadge">Agent</span>
+  <footer class="dock">
+    <div class="composer" id="composer">
+      <form id="composerForm" autocomplete="off">
+        <input id="text" placeholder="Type what you would say…" aria-label="Type a message to Kin" tabindex="-1" />
+        <button class="send" type="submit" aria-label="Send">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9"/></svg>
+        </button>
+      </form>
+    </div>
+    <div class="suggest-label">Try saying</div>
+    <div class="chips" id="chips">
+      <button>I slept only about four hours</button>
+      <button>I took my Metformin after breakfast</button>
+      <button>I'm feeling dizzy again, the room is spinning a little</button>
+      <button>I think I forgot my BP tablet yesterday</button>
+      <button>Remind me to call Priya at 7 in the evening</button>
+    </div>
+    <button class="ghost" id="typeBtn" aria-expanded="false" aria-controls="composer">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="15" height="9" rx="2"/><path d="M5.5 8.5h.01M8.5 8.5h.01M11.5 8.5h.01M14.5 8.5h.01M6.5 11.5h7"/></svg>
+      <span>Type instead</span>
+    </button>
+    <p class="hint" id="hint"></p>
+  </footer>
+
+  <aside class="sheet" id="sheet" aria-label="Behind the scenes" aria-hidden="true" inert>
+    <header>
+      <div>
+        <h2>Behind the scenes</h2>
+        <p>Every tool Kin calls on the MCP server, as it happens.</p>
       </div>
-    </div>
-    <div class="trace-list" id="turns">
-      <div class="trace-empty" id="traceEmpty">Say something to Kin and its tool calls will appear here.</div>
-    </div>
+      <button class="x" id="closeSheet" aria-label="Close">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m3 3 8 8M11 3l-8 8"/></svg>
+      </button>
+    </header>
+    <div class="turns" id="turns"><p class="empty-turns" id="emptyTurns">Tool calls show up here once you talk to Kin.</p></div>
   </aside>
 
   <script src="app.js"></script>

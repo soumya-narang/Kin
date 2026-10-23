@@ -5,82 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
   <title>Kin · Family</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%232b6a86'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="family.css" />
 </head>
-<body class="family">
-  <div class="banner" id="banner" role="status" aria-live="assertive">
-    <div class="app-badge" aria-hidden="true">K</div>
-    <div><div class="t" id="bannerTitle"></div><div class="m" id="bannerMsg"></div></div>
-  </div>
-
-  <header class="head">
-    <div class="head-in">
-      <div class="who">
-        <div class="avatar" id="avatar" aria-hidden="true">K</div>
-        <div><h1 id="name">Kin</h1><p id="who">&nbsp;</p></div>
-      </div>
-      <div class="head-actions">
-        <a class="btn press" href="/" target="_blank" rel="noopener"><span class="txt">Open</span>&nbsp;Alexa ↗</a>
-        <button class="btn press" id="reset" title="Reload the two-week demo history">Reset<span class="txt">&nbsp;demo</span></button>
-      </div>
+<body class="family first">
+  <header class="bar">
+    <div class="bar-in">
+      <span class="mark">Kin</span>
+      <a class="quiet" href="/" target="_blank" rel="noopener">
+        <span id="speakerLink">Open the speaker</span>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 5H5.8A1.8 1.8 0 0 0 4 6.8v7.4A1.8 1.8 0 0 0 5.8 16h7.4a1.8 1.8 0 0 0 1.8-1.8V12.5M11 4h5v5M16 4l-6.5 6.5"/></svg>
+      </a>
     </div>
   </header>
 
-  <main class="page">
-    <section class="card hero s12 lvl-ok" id="hero" aria-label="Status"></section>
+  <main class="wrap">
+    <section class="hero" id="hero" style="--i:0" aria-live="polite"></section>
 
-    <section class="card s5" aria-labelledby="hAlerts">
-      <h2 id="hAlerts">Alerts <small id="alertCount"></small></h2>
-      <div id="alerts"></div>
-    </section>
+    <div class="cols">
+      <div class="col">
+        <section class="card" style="--i:1;--o:2">
+          <h2>What Kin noticed</h2>
+          <p class="lede">Patterns across the last two weeks, not single moments.</p>
+          <div class="body" id="findings"></div>
+        </section>
 
-    <section class="card s7" aria-labelledby="hNoticed">
-      <h2 id="hNoticed">What Kin noticed <small>last 7 days</small></h2>
-      <div id="findings"></div>
-    </section>
+        <section class="card" style="--i:2;--o:4">
+          <h2>The last 14 days</h2>
+          <p class="lede">Medicine doses and symptoms, day by day.</p>
+          <div class="body">
+            <div class="tl-scroll"><div class="tl" id="timeline"></div></div>
+            <div class="legend">
+              <span><i class="pip taken"></i>Taken</span>
+              <span><i class="pip partial"></i>Partly</span>
+              <span><i class="pip missed"></i>Missed</span>
+              <span><i class="pip sym"></i>Symptom</span>
+            </div>
+          </div>
+        </section>
 
-    <section class="card s12" aria-labelledby="hTimeline">
-      <h2 id="hTimeline">Last 14 days</h2>
-      <div class="tl"><div class="tl-grid" id="timeline"></div></div>
-      <div class="legend">
-        <span><i style="background:var(--ok)"></i>taken</span>
-        <span><i style="background:linear-gradient(90deg,var(--ok) 50%,var(--fill) 50%)"></i>partly</span>
-        <span><i style="background:var(--urgent)"></i>missed</span>
-        <span><i style="background:var(--alert)"></i>symptom reported</span>
+        <section class="card" style="--i:3;--o:5">
+          <h2>Mood and sleep</h2>
+          <p class="lede">The last three days against the week before.</p>
+          <div class="body pair" id="vitals"></div>
+        </section>
+
+        <section class="card" style="--i:4;--o:7">
+          <h2 id="wordsTitle">In their own words</h2>
+          <div class="body" id="quotes"></div>
+        </section>
       </div>
-    </section>
 
-    <section class="card s8" aria-labelledby="hMood">
-      <h2 id="hMood">Mood and sleep</h2>
-      <div class="chart-wrap" id="chartWrap"><svg id="chart" role="img" aria-label="Mood and sleep over the last 14 days"></svg><div class="chart-tip" id="tip"></div></div>
-      <div class="legend"><span><i style="background:var(--accent)"></i>mood (1 to 5)</span><span><i style="background:#bf5af2"></i>sleep (hours)</span></div>
-    </section>
+      <div class="col">
+        <section class="card" style="--i:2;--o:1">
+          <h2>Messages from Kin</h2>
+          <p class="lede">What Kin has told you, and why.</p>
+          <div class="body" id="alerts"></div>
+        </section>
 
-    <section class="card s4" aria-labelledby="hMeds">
-      <h2 id="hMeds">Medicines <small>this week</small></h2>
-      <div class="rings" id="rings"></div>
-    </section>
+        <section class="card" style="--i:3;--o:3">
+          <h2>Ask Kin</h2>
+          <p class="lede" id="askLede">Ask in your own words.</p>
+          <form class="ask" id="ask" autocomplete="off">
+            <input id="askText" aria-label="Ask Kin a question" placeholder="How has everything been this week?" />
+            <button type="submit" aria-label="Ask"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9"/></svg></button>
+          </form>
+          <div class="sugg" id="sugg"></div>
+          <div class="reply" id="answer" aria-live="polite"></div>
+          <div class="digest">
+            <div class="row">
+              <h3>Today's summary</h3>
+              <button class="btn soft" id="digestBtn">Write it</button>
+            </div>
+            <p class="text" id="digest"></p>
+          </div>
+        </section>
 
-    <section class="card s7" aria-labelledby="hDigest">
-      <h2 id="hDigest">Daily digest</h2>
-      <div class="digest" id="digest"><span class="empty">A short written summary from Kin, in plain words.</span></div>
-      <div style="margin-top:14px"><button class="btn primary press" id="digestBtn">Write today's digest</button></div>
-      <div class="divider"></div>
-      <h2>Ask Kin</h2>
-      <div class="thread" id="thread" aria-live="polite"></div>
-      <form class="ask" id="ask" autocomplete="off">
-        <label class="sr-only" for="askText">Ask Kin a question</label>
-        <input id="askText" placeholder="How has she been sleeping this week?" />
-        <button class="go press" aria-label="Ask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
-      </form>
-    </section>
+        <section class="card" style="--i:4;--o:6">
+          <h2>Medicines this week</h2>
+          <div class="body" id="adherence"></div>
+        </section>
 
-    <section class="card s5" aria-labelledby="hWords">
-      <h2 id="hWords">In their own words</h2>
-      <div class="words" id="quotes"></div>
-    </section>
+      </div>
+    </div>
+
+    <p class="foot-note"><span>Kin shares what was said and what it noticed. It never diagnoses.</span><button id="reset">Reset demo history</button></p>
   </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8a4.5 4.5 0 0 1 9 0c0 4 1.5 5 1.5 5h-12s1.5-1 1.5-5ZM8.5 16a1.7 1.7 0 0 0 3 0"/></svg></div>
+    <div><b id="toastTitle"></b><span id="toastBody"></span></div>
+  </div>
 
   <script src="family.js"></script>
 </body>

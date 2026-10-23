@@ -4,217 +4,260 @@ const sessionId = crypto.randomUUID();
 const seenAlerts = new Set();
 let firstLoad = true;
 let lastKey = "";
-let lastData = null;
+let profileName = "";
+
+const LEVEL = {
+  ok: "All is well",
+  watch: "Worth keeping an eye on",
+  alert: "Worth a call today",
+  urgent: "Needs attention now",
+};
+const MSG_LEVEL = { watch: "For your awareness", alert: "Worth a call", urgent: "Urgent" };
+const CHECK = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg>`;
 
 const timeAgo = (iso) => {
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 45) return "just now";
+  if (s < 60) return "Just now";
   if (s < 3600) return `${Math.round(s / 60)} min ago`;
   if (s < 86400) return `${Math.round(s / 3600)} h ago`;
   return new Date(iso).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
 };
-const dayLabel = (key) => new Date(`${key}T12:00:00`);
-
-const ICON = {
-  pill: '<path d="M10.5 20.5a5 5 0 0 1-7-7l7-7a5 5 0 0 1 7 7zM8.5 8.5l7 7"/>',
-  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
-  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
-  smile: '<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9.5h.01M15 9.5h.01"/>',
-  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-  warn: '<path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/>',
-  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
-};
-const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
-const iconFor = (code) =>
-  code.startsWith("pattern") ? "link" : code.startsWith("med") ? "pill" : code.startsWith("symptom") || code.startsWith("severe") ? "bolt"
-  : code.startsWith("sleep") ? "moon" : code.startsWith("mood") ? "smile" : code.startsWith("quiet") ? "clock" : "warn";
-
-const STATUS = { ok: "All good", watch: "Keep an eye on this", alert: "Worth a call", urgent: "Act now" };
+const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+const present = (xs) => xs.filter((x) => x != null);
 
 async function load() {
   try {
     const res = await fetch("/api/family/overview");
-    if (!res.ok) return;
-    const data = await res.json();
-    const key = JSON.stringify({ p: data.profile, f: data.insights.findings, a: data.insights.adherence, d: data.insights.days, c: data.insights.checkedInToday, al: data.alerts, r: data.recent.map((x) => x.id) });
-    if (key === lastKey) return;       // nothing changed: leave the page alone, don't replay animations
-    lastKey = key;
-    lastData = data;
-    render(data);
-  } catch { /* server restarting */ }
+    if (res.ok) render(await res.json());
+  } catch { /* server restarting; the next poll will catch up */ }
 }
 
-function render({ profile: p, insights, alerts, recent }) {
-  const initials = p.parentName.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
-  $("avatar").textContent = initials;
-  $("name").textContent = p.parentName;
-  const rel = p.family[0];
-  $("who").textContent = `${p.age} · ${p.city}${rel ? ` · viewing as ${rel.name}, ${rel.relation}` : ""}`;
+function render(data) {
+  const { generatedAt, ...insights } = data.insights;
+  const key = JSON.stringify([data.profile, insights, data.alerts, data.recent]) + Math.floor(Date.now() / 60000);
+  if (key === lastKey) return;
+  lastKey = key;
+
+  const { profile: p, alerts, recent } = data;
+  profileName = p.preferredName;
   document.title = `${p.preferredName} · Kin`;
-  $("askText").placeholder = `How has ${p.preferredName} been sleeping this week?`;
 
-  // Hero
-  const hero = $("hero");
-  hero.className = `card hero s12 lvl-${insights.level}`;
-  const top = insights.findings[0];
-  hero.innerHTML = `
-    <div class="hero-top"><span class="pill lvl-${insights.level}">${STATUS[insights.level]}</span></div>
-    <h2 class="headline">${esc(insights.headline)}</h2>
-    <p class="sub">${esc(insights.level === "ok" ? "Nothing unusual this week. Kin keeps an eye on things so you don't have to." : top.detail)}</p>
-    <div class="hero-meta">
-      <span class="meta-chip">${insights.checkedInToday ? `${esc(p.preferredName)} has checked in today` : `No check-in from ${esc(p.preferredName)} yet today`}</span>
-      <span class="meta-chip">${esc(p.conditions.join(" · "))}</span>
-    </div>`;
+  renderHero(p, insights);
+  renderFindings(insights);
+  renderTimeline(p, insights.days);
+  renderVitals(insights.days);
+  renderAlerts(alerts);
+  renderAdherence(insights.adherence);
+  renderQuotes(recent);
 
-  // Alerts, styled like notifications
-  const open = alerts.filter((a) => !a.acknowledged).length;
-  $("alertCount").textContent = alerts.length ? (open ? `${open} to act on` : "all handled") : "";
+  $("speakerLink").textContent = `Open ${p.preferredName}'s speaker`;
+  $("askLede").textContent = `Ask about ${p.preferredName} in your own words.`;
+  $("askText").placeholder = `How has ${p.preferredName} been sleeping?`;
+  $("wordsTitle").textContent = `In ${p.preferredName}'s own words`;
+  if (!$("sugg").children.length) {
+    $("sugg").innerHTML = [`How has ${p.preferredName} been sleeping?`, `Did ${p.preferredName} take today's tablets?`, "Is there anything I should worry about?"]
+      .map((q) => `<button type="button">${esc(q)}</button>`)
+      .join("");
+  }
+
+  if (firstLoad) {
+    firstLoad = false;
+    setTimeout(() => document.body.classList.remove("first"), 1600);
+  }
+}
+
+function renderHero(p, i) {
+  const n = i.findings.length;
+  const bits = [];
+  if (n) bits.push(`${n} ${n === 1 ? "thing" : "things"} Kin noticed this week`);
+  bits.push(i.checkedInToday ? `${p.preferredName} has checked in today` : `No check-in from ${p.preferredName} yet today`);
+  $("hero").dataset.level = i.level;
+  $("hero").innerHTML = `
+    <div class="who">${esc(p.preferredName)}${p.age ? `, ${p.age}` : ""}${p.city ? ` · ${esc(p.city)}` : ""}</div>
+    <div class="state"><span class="dot-live"></span>${LEVEL[i.level]}</div>
+    <h1 class="headline">${esc(i.headline)}</h1>
+    <p class="sub">${bits.join(" · ")}</p>`;
+}
+
+function renderFindings(i) {
+  $("findings").innerHTML = i.findings.length
+    ? i.findings
+        .map((f) => `<div class="find ${f.level}"><span class="mark-dot"></span><div><div class="t">${esc(f.title)}</div><div class="d">${esc(f.detail)}</div></div></div>`)
+        .join("")
+    : `<p class="empty">Nothing unusual. Kin is keeping an eye on things.</p>`;
+}
+
+function renderAlerts(alerts) {
   $("alerts").innerHTML = alerts.length
-    ? alerts.map((a) => {
-        const isNew = !firstLoad && !seenAlerts.has(a.id);
-        return `<div class="notif${a.acknowledged ? "" : " open"}${isNew ? " enter" : ""}">
-          <div class="app-badge" aria-hidden="true">K</div>
-          <div class="notif-body">
-            <div class="notif-top"><b>Kin</b><span>${timeAgo(a.ts)}</span></div>
-            <div class="notif-title">${esc(a.title)}</div>
-            <div class="notif-msg">${esc(a.message)}</div>
+    ? alerts
+        .map((a) => {
+          const fresh = !firstLoad && !seenAlerts.has(a.id);
+          return `<article class="msg${fresh ? " fresh" : ""}">
+            <div class="top"><span class="lvl ${a.level}">${MSG_LEVEL[a.level] || a.level}</span><span>${timeAgo(a.ts)} · ${a.channel === "sns" ? "Sent by text or email" : "Shown here"}</span></div>
+            <h3>${esc(a.title)}</h3>
+            <p>${esc(a.message)}</p>
             ${a.reasons.length ? `<ul>${a.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
-            <div class="row">
-              ${a.acknowledged ? `<span>✓ Acknowledged</span>` : `<button class="btn primary tiny press" data-ack="${a.id}">I'll call ${esc(p.preferredName)}</button>`}
-              <span>${a.channel === "sns" ? "Emailed via Amazon SNS" : "Dashboard only"}</span>
-            </div>
-          </div>
-        </div>`;
-      }).join("")
-    : `<div class="empty"><b>No alerts.</b> Kin will tell you here, and by email, if a pattern needs a call.</div>`;
+            <div class="foot">${a.acknowledged ? `<span class="done">${CHECK}You are on it</span>` : `<button class="btn" data-ack="${esc(a.id)}">I'll call them</button>`}</div>
+          </article>`;
+        })
+        .join("")
+    : `<p class="empty">Nothing to report. Kin will message you if a pattern needs your attention.</p>`;
+
   const fresh = alerts.filter((a) => !seenAlerts.has(a.id));
   if (!firstLoad && fresh.length) announce(fresh[0]);
   alerts.forEach((a) => seenAlerts.add(a.id));
-
-  // Findings
-  $("findings").innerHTML = insights.findings.length
-    ? insights.findings.map((f) => `<div class="insight lvl-${f.level}"><div class="glyph">${svg(iconFor(f.code))}</div><div><div class="t">${esc(f.title)}</div><div class="d">${esc(f.detail)}</div></div></div>`).join("")
-    : `<div class="empty"><b>Nothing to report.</b> Medicines, mood and sleep all look steady.</div>`;
-
-  renderTimeline(p, insights.days);
-  renderChart(insights.days);
-  renderRings(insights.adherence);
-
-  // Their own words
-  const quotes = recent.filter((l) => l.utterance).slice(0, 8);
-  $("quotes").innerHTML = quotes.length
-    ? quotes.map((l) => `<div class="say"><div class="bubble kin">${esc(l.utterance)}</div><div class="when">${timeAgo(l.ts)} · ${esc(l.kind)}</div></div>`).join("")
-    : `<div class="empty">Nothing yet today.</div>`;
-  firstLoad = false;
 }
 
-// ---------- Timeline ----------
-const moodColor = (m) => `hsl(${Math.round(((m - 1) / 4) * 120)} 68% 50%)`;
 function renderTimeline(profile, days) {
-  const today = days.at(-1)?.date;
-  let h = `<span></span>` + days.map((d) => {
-    const dt = dayLabel(d.date);
-    return `<div class="dh${d.date === today ? " today" : ""}">${dt.toLocaleDateString([], { weekday: "narrow" })}<br>${dt.getDate()}</div>`;
-  }).join("");
-  for (const m of profile.medications) {
-    h += `<div class="rowlabel">${esc(m.name)}<small>${esc(m.purpose)}</small></div>`;
-    h += days.map((d) => {
-      const s = d.meds[m.name];
-      const glyph = { taken: "✓", missed: "✕" }[s] || "";
-      return `<span class="mark ${s}" title="${esc(m.name)} · ${dayLabel(d.date).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })} · ${s}">${glyph}</span>`;
-    }).join("");
-  }
-  h += `<div class="rowlabel">Symptoms<small>as reported</small></div>` + days.map((d) =>
-    d.symptoms.length ? `<span class="mark sym" title="${esc(d.symptoms.join(", "))}">${d.symptoms.length > 1 ? d.symptoms.length : "!"}</span>` : `<span class="mark none"></span>`).join("");
-  h += `<div class="rowlabel">Mood<small>daily</small></div>` + days.map((d) =>
-    d.mood != null ? `<span class="mark" style="background:${moodColor(d.mood)}" title="Mood ${d.mood.toFixed(1)} of 5"></span>` : `<span class="mark none"></span>`).join("");
-  $("timeline").innerHTML = h;
+  const cells = (fn) => days.map(fn).join("");
+  const head = cells((d, i) => {
+    const dt = new Date(`${d.date}T12:00:00`);
+    return `<div class="day${i === days.length - 1 ? " today" : ""}"><b>${dt.toLocaleDateString([], { weekday: "narrow" })}</b>${dt.getDate()}</div>`;
+  });
+  const meds = profile.medications
+    .map(
+      (m) =>
+        `<div class="lab">${esc(m.name)}</div>${cells((d) => {
+          const s = d.meds[m.name] || "pending";
+          return `<div class="cell"><i class="pip ${s}" title="${esc(m.name)}, ${d.date}: ${s}"></i></div>`;
+        })}`,
+    )
+    .join("");
+  const sym = `<div class="lab">Symptoms</div>${cells((d) =>
+    d.symptoms.length
+      ? `<div class="cell"><i class="pip sym" title="${esc(d.symptoms.join(", "))}"></i></div>`
+      : `<div class="cell"><i class="pip pending"></i></div>`,
+  )}`;
+  $("timeline").innerHTML = `<div></div>${head}${meds}<div class="rule"></div>${sym}`;
 }
 
-// ---------- Mood and sleep chart: smooth, with a hover read-out ----------
+// ---- mood and sleep ----
+
 function smooth(pts) {
-  if (pts.length < 2) return "";
+  if (pts.length < 2) return `M${pts[0][0]},${pts[0][1]}`;
   let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
   for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2, t = 0.18;
-    const c1 = [p1[0] + (p2[0] - p0[0]) * t, p1[1] + (p2[1] - p0[1]) * t];
-    const c2 = [p2[0] - (p3[0] - p1[0]) * t, p2[1] - (p3[1] - p1[1]) * t];
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
     d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
   }
   return d;
 }
-function renderChart(days) {
-  const el = $("chart");
-  const W = Math.max($("chartWrap").clientWidth, 260), H = 200, pl = 22, pr = 8, pt = 16, pb = 26;
-  el.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const n = days.length;
-  const x = (i) => pl + (i * (W - pl - pr)) / (n - 1);
-  const yMood = (m) => H - pb - ((m - 1) / 4) * (H - pt - pb);
-  const ySleep = (s) => H - pb - (Math.min(s, 10) / 10) * (H - pt - pb);
-  const moodPts = days.map((d, i) => (d.mood != null ? [x(i), yMood(d.mood)] : null)).filter(Boolean);
-  const sleepPts = days.map((d, i) => (d.sleepHours != null ? [x(i), ySleep(d.sleepHours)] : null)).filter(Boolean);
-  const moodPath = smooth(moodPts);
-  const area = moodPts.length > 1 ? `${moodPath} L${moodPts.at(-1)[0]},${H - pb} L${moodPts[0][0]},${H - pb} Z` : "";
-  const grid = [1, 3, 5].map((m) => `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${yMood(m)}" y2="${yMood(m)}"/><text class="lbl" x="0" y="${yMood(m) + 4}">${m}</text>`).join("");
-  const xl = days.map((d, i) => (i % 2 === 0 || i === n - 1 ? `<text class="lbl" x="${x(i)}" y="${H - 6}" text-anchor="middle">${dayLabel(d.date).getDate()}</text>` : "")).join("");
-  el.innerHTML = `
-    <defs><linearGradient id="moodFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0.28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
-    ${grid}${xl}
-    ${area ? `<path d="${area}" fill="url(#moodFill)"/>` : ""}
-    <path class="line-sleep" d="${smooth(sleepPts)}"/>
-    <path class="line-mood" d="${moodPath}"/>
-    <line class="grid" id="cross" y1="${pt}" y2="${H - pb}" style="opacity:0"/>
-    <circle id="cm" r="5" fill="var(--accent)" stroke="var(--card)" stroke-width="2.5" style="opacity:0"/>`;
-  const tip = $("tip");
-  el.onpointermove = (e) => {
-    const r = el.getBoundingClientRect();
-    const px = ((e.clientX - r.left) / r.width) * W;
-    const i = Math.max(0, Math.min(n - 1, Math.round(((px - pl) / (W - pl - pr)) * (n - 1))));
-    const d = days[i];
-    const cross = el.querySelector("#cross"), cm = el.querySelector("#cm");
-    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.style.opacity = 1;
-    if (d.mood != null) { cm.setAttribute("cx", x(i)); cm.setAttribute("cy", yMood(d.mood)); cm.style.opacity = 1; } else cm.style.opacity = 0;
-    tip.innerHTML = `<b>${dayLabel(d.date).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })}</b><br>Mood ${d.mood != null ? d.mood.toFixed(1) : "–"} · Sleep ${d.sleepHours != null ? d.sleepHours + " h" : "–"}`;
-    tip.style.left = `${(x(i) / W) * 100}%`;
-    tip.classList.add("on");
+
+function spark(values, [lo, hi], color) {
+  const W = 300, H = 64, pad = 6;
+  const x = (i) => (i / (values.length - 1)) * W;
+  const y = (v) => H - pad - ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo)) * (H - pad * 2);
+  const segs = [];
+  let cur = [];
+  values.forEach((v, i) => {
+    if (v == null) { if (cur.length) segs.push(cur), (cur = []); } else cur.push([x(i), y(v)]);
+  });
+  if (cur.length) segs.push(cur);
+  const paths = segs
+    .filter((s) => s.length > 1)
+    .map((s) => `<path class="area" d="${smooth(s)} L${s.at(-1)[0]},${H} L${s[0][0]},${H}Z"/><path class="line" d="${smooth(s)}"/>`)
+    .join("");
+  const lastIdx = values.map((v) => v != null).lastIndexOf(true);
+  const dot = lastIdx >= 0 ? `<i style="left:${(x(lastIdx) / W) * 100}%;top:${(y(values[lastIdx]) / H) * 100}%"></i>` : "";
+  return `<div class="spark" style="--c:${color}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${dot}</div>`;
+}
+
+function renderVitals(days) {
+  const series = (key) => days.map((d) => d[key] ?? null);
+  const compare = (key, unit, step, fmt) => {
+    const recent = avg(present(days.slice(-3).map((d) => d[key])));
+    const before = avg(present(days.slice(-10, -3).map((d) => d[key])));
+    if (recent == null) return { value: "–", note: "Nothing logged yet" };
+    if (before == null) return { value: fmt(recent), note: "Not enough history yet" };
+    const diff = recent - before;
+    const note = Math.abs(diff) < step ? "Steady compared with the week before" : `${diff < 0 ? "Lower" : "Higher"} than the week before (${fmt(before)}${unit})`;
+    return { value: fmt(recent), note, down: diff <= -step };
   };
-  el.onpointerleave = () => { tip.classList.remove("on"); el.querySelector("#cross").style.opacity = 0; el.querySelector("#cm").style.opacity = 0; };
+  const mood = compare("mood", "", 0.5, (v) => v.toFixed(1));
+  const sleep = compare("sleepHours", " h", 0.75, (v) => v.toFixed(1));
+  const tone = (m) => (m.down ? "var(--alert)" : "var(--accent)");
+  $("vitals").innerHTML = `
+    <div class="metric"><div class="k">Mood</div><div class="v">${mood.value}<small>/ 5</small></div><div class="n">${mood.note}</div>${spark(series("mood"), [1, 5], tone(mood))}</div>
+    <div class="metric"><div class="k">Sleep</div><div class="v">${sleep.value}<small>hours</small></div><div class="n">${sleep.note}</div>${spark(series("sleepHours"), [3, 9], tone(sleep))}</div>`;
 }
 
-// ---------- Rings ----------
-function renderRings(adherence) {
-  const C = 2 * Math.PI * 34;
-  $("rings").innerHTML = adherence.map((a) => {
-    const pct = a.due ? a.taken / a.due : 1;
-    const color = pct >= 0.85 ? "var(--ok)" : pct >= 0.7 ? "var(--watch)" : "var(--urgent)";
-    return `<div class="ring">
-      <svg viewBox="0 0 84 84" role="img" aria-label="${esc(a.medication)}: ${a.taken} of ${a.due} doses"><circle class="track" cx="42" cy="42" r="34" fill="none" stroke-width="9"/><circle class="prog" cx="42" cy="42" r="34" fill="none" stroke-width="9" stroke="${color}" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-off="${C * (1 - pct)}"/></svg>
-      <div><div class="ring-val">${a.taken}/${a.due}</div><div class="ring-name">${esc(a.medication)}</div><div class="ring-sub">${esc(a.purpose)}</div></div>
-    </div>`;
-  }).join("");
-  requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".ring .prog").forEach((c) => (c.style.strokeDashoffset = c.dataset.off))));
+function renderAdherence(list) {
+  $("adherence").innerHTML = list
+    .map((a) => {
+      const pct = a.due ? Math.round((a.taken / a.due) * 100) : 100;
+      return `<div class="med"><div class="row"><span><span class="name">${esc(a.medication)}</span><span class="for">${esc(a.purpose)}</span></span><span class="num">${a.taken} of ${a.due}</span></div>
+        <div class="track"><i class="${pct < 80 ? "low" : ""}" style="width:${pct}%"></i></div></div>`;
+    })
+    .join("");
 }
 
-// ---------- New alert: banner from the top, like a phone notification ----------
-let bannerTimer;
+function renderQuotes(recent) {
+  const quotes = recent.filter((l) => l.utterance).slice(0, 5);
+  $("quotes").innerHTML = quotes.length
+    ? quotes.map((l) => `<div class="quote"><q>“${esc(l.utterance)}”</q><div class="when">${timeAgo(l.ts)}</div></div>`).join("")
+    : `<p class="empty">Nothing said yet today.</p>`;
+}
+
+// ---- alerts: toast and system notification ----
+
+let toastTimer;
 function announce(alert) {
-  $("bannerTitle").textContent = `Kin · ${alert.title}`;
-  $("bannerMsg").textContent = alert.reasons[0] || alert.message;
-  $("banner").classList.add("show");
-  clearTimeout(bannerTimer);
-  bannerTimer = setTimeout(() => $("banner").classList.remove("show"), 7500);
-  if ("Notification" in window && Notification.permission === "granted") new Notification(`Kin: ${alert.title}`, { body: alert.reasons[0] || alert.message });
+  $("toastTitle").textContent = alert.title;
+  $("toastBody").textContent = alert.reasons[0] || alert.message;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 7000);
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(`Kin: ${alert.title}`, { body: alert.reasons[0] || alert.message });
+  }
 }
-$("banner").addEventListener("click", () => $("banner").classList.remove("show"));
+$("toast").addEventListener("click", () => $("toast").classList.remove("show"));
 
-// ---------- Actions ----------
 $("alerts").addEventListener("click", async (e) => {
-  const id = e.target.dataset?.ack;
-  if (!id) return;
-  e.target.disabled = true;
-  await fetch(`/api/family/alerts/${id}/ack`, { method: "POST" });
+  const btn = e.target.closest("[data-ack]");
+  if (!btn) return;
+  btn.disabled = true;
+  await fetch(`/api/family/alerts/${btn.dataset.ack}/ack`, { method: "POST" });
   lastKey = "";
   load();
+});
+
+// ---- ask Kin and the daily summary ----
+
+function reveal(el, text, waiting = false) {
+  el.textContent = text;
+  el.classList.toggle("wait", waiting);
+  el.classList.remove("rise");
+  void el.offsetWidth;
+  el.classList.add("rise");
+}
+
+async function ask(text) {
+  reveal($("answer"), "Kin is thinking…", true);
+  try {
+    const res = await fetch("/api/talk", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text, sessionId, speaker: "family" }),
+    });
+    const data = await res.json();
+    reveal($("answer"), data.reply || "Sorry, I couldn't answer that just now.");
+  } catch {
+    reveal($("answer"), "Sorry, I couldn't reach Kin just now.");
+  }
+}
+$("ask").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("askText").value.trim();
+  if (!text) return;
+  $("askText").value = "";
+  ask(text);
+});
+$("sugg").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b) ask(b.textContent);
 });
 
 $("digestBtn").addEventListener("click", async () => {
@@ -223,65 +266,44 @@ $("digestBtn").addEventListener("click", async () => {
   btn.textContent = "Writing…";
   try {
     const data = await (await fetch("/api/family/digest")).json();
-    const box = $("digest");
-    box.classList.remove("fresh");
-    box.textContent = data.digest || data.error;
-    void box.offsetWidth;
-    box.classList.add("fresh");
+    reveal($("digest"), data.digest || "Sorry, the summary isn't available right now.");
+  } catch {
+    reveal($("digest"), "Sorry, the summary isn't available right now.");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Write today's digest";
+    btn.textContent = "Write it again";
   }
 });
 
-function bubble(cls, text) {
-  const b = document.createElement("div");
-  b.className = `bubble ${cls}`;
-  if (text) b.textContent = text;
-  $("thread").append(b);
-  return b;
-}
-$("ask").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = $("askText").value.trim();
-  if (!text) return;
-  $("askText").value = "";
-  bubble("me", text);
-  const typing = bubble("kin typing");
-  typing.innerHTML = "<i></i><i></i><i></i>";
-  try {
-    const res = await fetch("/api/talk", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text, sessionId, speaker: "family" }),
-    });
-    const data = await res.json();
-    typing.className = "bubble kin";
-    typing.textContent = data.reply || data.error || "Sorry, I couldn't answer that.";
-  } catch {
-    typing.className = "bubble kin";
-    typing.textContent = "Sorry, I couldn't reach Kin.";
-  }
-});
+// ---- demo reset (two taps, no modal) ----
 
+let resetArmed;
 $("reset").addEventListener("click", async () => {
-  if (!confirm("Reload the two-week demo history? This clears today's conversation and alerts.")) return;
+  const btn = $("reset");
+  if (!resetArmed) {
+    btn.textContent = "Tap again to reload the history";
+    resetArmed = setTimeout(() => {
+      resetArmed = null;
+      btn.textContent = "Reset demo history";
+    }, 3500);
+    return;
+  }
+  clearTimeout(resetArmed);
+  resetArmed = null;
+  btn.textContent = "Reset demo history";
   const res = await fetch("/api/demo/reset", { method: "POST" });
-  if (!res.ok) return alert((await res.json().catch(() => ({}))).error || "Reset failed.");
+  if (!res.ok) return reveal($("answer"), (await res.json().catch(() => ({}))).error || "Reset failed.");
   seenAlerts.clear();
   firstLoad = true;
   lastKey = "";
-  $("digest").innerHTML = `<span class="empty">A short written summary from Kin, in plain words.</span>`;
-  $("thread").innerHTML = "";
-  $("banner").classList.remove("show");
+  $("digest").textContent = "";
+  $("answer").textContent = "";
   load();
 });
 
 if ("Notification" in window && Notification.permission === "default") {
   document.addEventListener("click", () => Notification.requestPermission(), { once: true });
 }
-let resizeTimer;
-addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => lastData && renderChart(lastData.insights.days), 150); });
 
 load();
 setInterval(load, 4000);
