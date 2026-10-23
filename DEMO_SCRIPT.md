@@ -4,7 +4,7 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 
 **Before recording**
 
-- Start with `KIN_LLM=bedrock`, `KIN_TABLE` and `KIN_SNS_TOPIC_ARN` set, so the Bedrock, DynamoDB and SNS shots are real. Subscribe a phone or email you can show on screen.
+- Start with `KIN_LLM=bedrock` and `KIN_SNS_TOPIC_ARN` set, so the Bedrock and SNS shots are real. Storage is a local file in this setup (no `KIN_TABLE`), so do not mention DynamoDB. Keep the subscribed inbox open in another tab.
 - Click **Reset demo** on the dashboard so Kamala's history is fresh.
 - Window layout: parent device at http://localhost:3000 on the left (open the "behind the scenes" panel), family dashboard at http://localhost:3000/family.html on the right. Use Chrome or Edge for voice.
 - Have the SNS message ready on a phone or inbox tab.
@@ -72,7 +72,7 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 **Screen:** Architecture diagram from the README.
 
 **Voiceover:**
-"To be clear about what's real: the MCP server and the agent calling it are live. [Only say the next part for services you actually connected and showed: Bedrock, DynamoDB, SNS.] The Alexa+ device is a browser simulation, and Kamala is seeded demo data. Kin: care that listens, so families don't have to ask."
+"To be clear about what's real: the MCP server, the agent on Amazon Bedrock, and the alert email through Amazon SNS are all live. The Alexa+ device is a browser simulation, the care record is a local file, and Kamala is seeded demo data. Kin: care that listens, so families don't have to ask."
 
 **Screen:** End card with the repo link.
 
@@ -82,4 +82,4 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 
 - If voice recognition misfires, type the line in the device's text box; the tool-call panel looks the same.
 - Do not skip the "simulated" line at the end. Judges will check the claim against the repo.
-- If SNS is not configured, drop the phone shot and stay on the dashboard alert. Do not say the message was sent by SMS.
+- The alert goes out as an **email** through SNS, not SMS. Say "email".
