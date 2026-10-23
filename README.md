@@ -62,7 +62,7 @@ cp .env.example .env      # set KIN_LLM=mock to run without AWS
 npm start
 ```
 
-- Start here: http://localhost:3000 (choose the parent's speaker or the family view)
+- Start here: http://localhost:3000 (the landing page; open the parent's speaker or the family view from the top)
 - Parent device (simulated Alexa+): http://localhost:3000/speaker.html (use Chrome or Edge for voice)
 - Family dashboard: http://localhost:3000/family.html
 - MCP endpoint: http://localhost:3000/mcp

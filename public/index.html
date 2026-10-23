@@ -4,51 +4,261 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
-  <title>Kin</title>
+  <meta name="description" content="Kin is an Alexa+ care companion for parents who live alone. They talk to their speaker; Kin remembers, notices patterns over days, and tells the family when something needs a call." />
+  <title>Kin · A care companion on Alexa+</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%232b6a86'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="base.css" />
-  <link rel="stylesheet" href="family.css" />
+  <link rel="stylesheet" href="landing.css" />
+  <script>document.documentElement.classList.add("js");</script>
 </head>
-<body class="family home">
-  <header class="bar">
-    <div class="bar-in"><span class="mark">Kin</span></div>
+<body class="landing">
+  <header class="lbar">
+    <div class="shell">
+      <a class="mark" href="#top">Kin</a>
+      <nav aria-label="Sections">
+        <a href="#week">How it notices</a>
+        <a href="#thread">What happens next</a>
+        <a href="#hood">Under the hood</a>
+      </nav>
+      <a class="pill-link" href="family.html">Family view</a>
+    </div>
   </header>
 
-  <main class="home-main">
-    <p class="eyebrow">A care companion on Alexa+</p>
-    <h1 id="headline">Everyday conversations, turned into care the family can see.</h1>
-    <p class="intro" id="intro">The person you care for just talks to their speaker. Kin remembers, notices patterns over days, and tells the family when something needs a call.</p>
+  <main id="top">
+    <!-- The way in: pick whose side you're on -->
+    <section class="open">
+      <div class="shell">
+        <p class="kicker">A care companion on Alexa+</p>
+        <h1>Mum says she's fine. <em>Kin listens</em> to the rest.</h1>
+        <p class="lead">Kamala is 74 and lives alone in Pune. Her children live in other cities. She won't install an app, but she talks to the speaker in her kitchen every day. Kin turns those everyday words into care her family can see.</p>
 
-    <div class="choices">
-      <a class="choice speaker" href="speaker.html" style="--i:0">
-        <svg class="go-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg>
-        <span class="art"></span>
-        <h2 id="speakerTitle">The speaker</h2>
-        <p id="speakerText">The Echo in their home, simulated in your browser. Talk to Kin by voice, the way they would.</p>
-      </a>
-      <a class="choice family-c" href="family.html" style="--i:1">
-        <svg class="go-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg>
-        <span class="art"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="9.5" r="3.5"/><circle cx="19.5" cy="11" r="2.8"/><path d="M3.5 22c.8-3.8 3.4-6 6.5-6s5.7 2.2 6.5 6M16.5 17.2c.9-.6 1.9-.9 3-.9 2.5 0 4.4 1.8 5 4.7"/></svg></span>
-        <h2>Family view</h2>
-        <p id="familyText">How they're doing, what Kin noticed and why, and messages that Kin reads aloud to them.</p>
-      </a>
-    </div>
+        <div class="doors">
+          <a class="door speaker" href="speaker.html">
+            <svg class="arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg>
+            <span class="orb-mini" aria-hidden="true"></span>
+            <h2>Kamala's speaker</h2>
+            <p>Be Kamala for a minute. Talk to Kin by voice in her kitchen, the way she would.</p>
+          </a>
+          <a class="door family" href="family.html">
+            <svg class="arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg>
+            <span class="glyph" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="9.5" r="3.5"/><circle cx="19.5" cy="11" r="2.8"/><path d="M3.5 22c.8-3.8 3.4-6 6.5-6s5.7 2.2 6.5 6M16.5 17.2c.9-.6 1.9-.9 3-.9 2.5 0 4.4 1.8 5 4.7"/></svg></span>
+            <h2>Family view</h2>
+            <p>Be Priya, her daughter in Bengaluru. See how Kamala is doing, why Kin is concerned, and send her a message.</p>
+          </a>
+        </div>
+        <p class="doors-note">A working demo with a seeded household. Open both in separate windows to see them talk to each other.</p>
+      </div>
+    </section>
+
+    <!-- The problem, without statistics -->
+    <section class="chapter">
+      <div class="shell quote-wall">
+        <p class="big-quote rv">“I'm fine.”<span>Every parent, on every phone call.</span></p>
+        <div class="rv">
+          <p class="say">The dizzy spell after her bath, the tablet she forgot twice, the quiet evenings. None of it makes it into a five-minute call, and none of it sounds serious on its own.</p>
+          <p class="say">Amazon retired Alexa Together, its caregiving service, in 2024. The need didn't go anywhere. Kin brings it back, built for Alexa+.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- The signature: a week, and the pattern inside it -->
+    <section class="chapter" id="week">
+      <div class="shell">
+        <h2 class="title rv">One conversation says nothing. A week says a lot.</h2>
+        <p class="say rv">Kamala mentions things in passing, the way anyone would. Kin keeps every word, and looks at the days together.</p>
+
+        <div class="week-wrap" id="weekWrap">
+          <ol class="week">
+            <li class="day" style="--n:0">
+              <span class="dn">Mon</span>
+              <blockquote>“Feeling good, went for my walk.”</blockquote>
+              <div class="marks"><span class="tag took">BP tablet</span></div>
+            </li>
+            <li class="day" style="--n:1">
+              <span class="dn">Tue</span>
+              <blockquote>“Mrs. Kulkarni came over for tea!”</blockquote>
+              <div class="marks"><span class="tag took">BP tablet</span></div>
+            </li>
+            <li class="day" style="--n:2">
+              <span class="dn">Wed</span>
+              <blockquote>“I felt a little dizzy after my bath.”</blockquote>
+              <div class="marks"><span class="tag missed" data-from="a">BP tablet</span><span class="tag dizzy" data-to="a">Dizzy</span></div>
+            </li>
+            <li class="day" style="--n:3">
+              <span class="dn">Thu</span>
+              <blockquote>“I'm alright, just tired.”</blockquote>
+              <div class="marks"><span class="tag took">BP tablet</span></div>
+            </li>
+            <li class="day" style="--n:4">
+              <span class="dn">Fri</span>
+              <blockquote class="hush">Nothing about the tablet.</blockquote>
+              <div class="marks"><span class="tag missed" data-from="b">BP tablet</span></div>
+            </li>
+            <li class="day" style="--n:5">
+              <span class="dn">Sat</span>
+              <blockquote>“Felt dizzy again when I got up from the sofa.”</blockquote>
+              <div class="marks"><span class="tag took">BP tablet</span><span class="tag dizzy" data-to="b">Dizzy</span></div>
+            </li>
+            <li class="day today" style="--n:6">
+              <span class="dn">Today</span>
+              <blockquote>“I'm feeling dizzy again.”</blockquote>
+              <div class="marks"><span class="tag missed" data-from="c">BP tablet</span><span class="tag dizzy" data-to="c">Dizzy</span></div>
+            </li>
+          </ol>
+          <svg class="arcs" id="arcs" aria-hidden="true"></svg>
+        </div>
+
+        <div class="finding" role="note">
+          <span class="beat" aria-hidden="true"></span>
+          <div>
+            <b>Dizziness is lining up with missed Amlodipine</b>
+            <span>Three dizzy spells this week, each on or right after a day her blood-pressure tablet was missed.</span>
+          </div>
+          <span class="to">Sent to Priya, with the reasons</span>
+        </div>
+        <p class="week-caption">An illustrative week. The pattern itself is found by a deterministic care engine; the language model explains it and acts on it, it never invents it.</p>
+      </div>
+    </section>
+
+    <!-- The loop, across two homes -->
+    <section class="chapter" id="thread">
+      <div class="shell">
+        <h2 class="title rv">Two homes, one thread.</h2>
+        <p class="say rv">An alert is only the start. What matters is what happens in the next five minutes, in Kamala's kitchen and on Priya's phone.</p>
+
+        <div class="homes">
+          <div class="home-head rv"><b>Kamala's kitchen</b><span>Pune</span></div>
+          <div class="home-head right rv"><b>Priya's phone</b><span>Bengaluru</span></div>
+
+          <div class="beat-row k rv">
+            <div class="slot"><div class="card-k">
+              <div class="when">Pune · 5:46 PM</div>
+              <div class="who-said her">Kamala</div>
+              <p class="line spoken">“I'm feeling dizzy again.”</p>
+              <div class="who-said" style="margin-top:14px">Kin</div>
+              <p class="line spoken">“Oh Kamala, I'm sorry you're feeling dizzy again. I've asked Priya to give you a call. For now, please sit down and have a glass of water.”</p>
+            </div></div>
+            <div class="slot"></div>
+          </div>
+
+          <div class="beat-row p alerting rv">
+            <div class="slot"></div>
+            <div class="slot"><div class="card-p">
+              <div class="when">Bengaluru · 5:46 PM</div>
+              <div class="who-said alert">Kin · Worth a call today</div>
+              <p class="line"><b>Dizziness is lining up with missed Amlodipine</b></p>
+              <ul><li>Reported three times this week, each on or right after a missed blood-pressure dose.</li><li>Worth a call, and a check with the doctor.</li></ul>
+              <p class="via">By text and on the dashboard, through Amazon SNS</p>
+            </div></div>
+          </div>
+
+          <div class="beat-row p rv">
+            <div class="slot"></div>
+            <div class="slot"><div class="card-p">
+              <div class="when">Bengaluru · 5:48 PM</div>
+              <div class="who-said">Priya replies from the alert</div>
+              <p class="line"><span class="reply">Please sit down and have some water. I'll call you soon.</span></p>
+            </div></div>
+          </div>
+
+          <div class="beat-row k rv">
+            <div class="slot"><div class="card-k">
+              <div class="when">Pune · 5:48 PM</div>
+              <div class="who-said">Kin, at the next quiet moment</div>
+              <p class="line spoken">“Kamala, a message from Priya: Please sit down and have some water. I'll call you soon.”</p>
+              <div class="who-said her" style="margin-top:14px">Kamala</div>
+              <p class="line spoken">“Tell Priya I'm feeling better now, don't worry.”</p>
+            </div></div>
+            <div class="slot"></div>
+          </div>
+
+          <div class="beat-row p rv">
+            <div class="slot"></div>
+            <div class="slot"><div class="card-p">
+              <div class="when">Bengaluru · 5:49 PM</div>
+              <div class="who-said">Kamala, through Kin</div>
+              <p class="line spoken serif">“I'm feeling better now, don't worry.”</p>
+              <p class="via">Her own words, not a status code</p>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How Kin behaves -->
+    <section class="chapter" id="manner">
+      <div class="shell">
+        <h2 class="title rv">How Kin behaves around someone's mother.</h2>
+        <div class="rules">
+          <div class="rule rv"><h3>Patterns, not pings.</h3><p>One dizzy spell isn't an alert. Dizziness that keeps lining up with missed blood-pressure doses is. Each pattern alerts the family at most once every 12 hours.</p></div>
+          <div class="rule rv"><h3>Some things can't wait.</h3><p>A fall, chest pain or trouble breathing skips the pattern entirely. Kin tells Kamala to call emergency services and tells the family straight away.</p></div>
+          <div class="rule rv"><h3>It speaks first, gently.</h3><p><q>Good morning, Kamala. How did you sleep last night?</q> when nothing has been heard yet that morning, and a nudge when a tablet is half an hour late, long before it counts as missed.</p></div>
+          <div class="rule rv"><h3>Her words, not a score.</h3><p>The family sees what Kamala actually said, and every alert explains why it was sent. Nothing is reduced to a red number.</p></div>
+          <div class="rule rv"><h3>It never diagnoses.</h3><p>Kin reports what was said and what it noticed, and suggests a call or a word with the doctor. It never tells anyone to change their medication.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- For the curious, and for judges -->
+    <section class="chapter" id="hood">
+      <div class="shell">
+        <h2 class="title rv">Under the hood.</h2>
+        <p class="say rv">Kamala's speaker and Priya's questions go through the same MCP server and the same care record. Alexa+ connects to Kin the way any MCP client would.</p>
+
+        <div class="flow rv">
+          <div class="node"><span class="k">Voice</span><b>Alexa+ speaker</b><span>Simulated in the browser with the Web Speech API</span></div>
+          <div class="node aws"><span class="k">Amazon Bedrock</span><b>Agent</b><span>Converse API with tool use, as the Alexa+ side</span></div>
+          <div class="node"><span class="k">MCP · Streamable HTTP</span><b>Kin server</b><span>12 tools, two resources, protocol 2025-11-25</span></div>
+          <div class="node"><span class="k">Deterministic</span><b>Care engine</b><span>Adherence, symptoms, mood and sleep drift, cross-signal patterns</span></div>
+          <div class="node aws"><span class="k">Amazon DynamoDB · SNS</span><b>Memory and reach</b><span>One partition per household; SMS or email to the family</span></div>
+        </div>
+
+        <div class="tools rv">
+          <code>get_care_context</code><code>log_medication</code><code>log_symptom</code><code>log_mood</code><code>log_sleep</code><code>log_note</code><code>get_trends</code><code>notify_family</code><code>schedule_reminder</code><code>get_family_briefing</code><code>message_family</code><code>message_parent</code>
+        </div>
+        <p class="tools-note rv">Open the speaker and tap “Behind the scenes” to watch each call happen live.</p>
+
+        <div class="honest rv">
+          <div class="real">
+            <h3>Real in this demo</h3>
+            <ul>
+              <li>The MCP server and every tool call the agent makes</li>
+              <li>The care engine, its patterns, cooldowns and red flags</li>
+              <li>Amazon Bedrock, DynamoDB and SNS when they are configured</li>
+              <li>Messages both ways, check-ins and late-dose nudges</li>
+            </ul>
+          </div>
+          <div class="sim">
+            <h3>Simulated</h3>
+            <ul>
+              <li>The Echo itself: a web page standing in for Alexa+</li>
+              <li>Kamala and her two weeks of history, which are seeded demo data</li>
+              <li>The “Have Kin check in now” button, which skips the wait for morning</li>
+              <li>Clinical validity: the thresholds are sensible heuristics, not medical advice</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="close">
+      <div class="shell">
+        <h2 class="rv">Care that listens, so families don't have to ask.</h2>
+        <div class="ways rv">
+          <a class="pill-link" href="speaker.html">Talk as Kamala</a>
+          <a class="btn-ghost" href="family.html">Open the family view</a>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <p class="home-foot">Built on the Model Context Protocol and Amazon Bedrock. The speaker is simulated in the browser for this demo.</p>
+  <footer class="lfoot">
+    <div class="shell">
+      <span>Kin is open source under the MIT license.</span>
+      <a href="https://github.com/soumya-narang/kin" rel="noopener">Source on GitHub</a>
+    </div>
+  </footer>
 
-  <script>
-    fetch("/api/family/overview")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        const p = d && d.profile;
-        if (!p) return;
-        const family = p.family.map((f) => f.name);
-        document.getElementById("speakerTitle").textContent = `${p.preferredName}'s speaker`;
-        document.getElementById("speakerText").textContent = `The Echo in ${p.preferredName}'s home${p.city ? ` in ${p.city}` : ""}, simulated in your browser. Talk to Kin the way ${p.preferredName} would.`;
-        if (family.length) document.getElementById("familyText").textContent = `For ${family.join(" and ")}: how ${p.preferredName} is doing, what Kin noticed and why, and messages Kin reads aloud.`;
-      })
-      .catch(() => {});
-  </script>
+  <script src="landing.js"></script>
 </body>
 </html>

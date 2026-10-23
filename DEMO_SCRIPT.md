@@ -13,7 +13,7 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 
 ## 0:00 to 0:25. The problem
 
-**Screen:** The Kin home page: "Kamala's speaker" and "Family view" side by side. Then Kamala's speaker.
+**Screen:** The Kin landing page: the headline, then a slow scroll through "A week, as Kin hears it" as the lines draw between missed tablets and dizzy spells. Then click into Kamala's speaker.
 
 **Voiceover:**
 "Millions of older adults live alone while their children live far away. Kamala is 74 and lives alone in Pune. Her daughter lives abroad. She won't install an app, but she talks to Alexa every day. Kin is an Alexa+ care companion, built on MCP, that turns those everyday conversations into care her family can see."
