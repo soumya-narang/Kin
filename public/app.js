@@ -45,32 +45,88 @@ fetch("/api/family/overview")
 setText($("kin"), `${greeting()}. Tap the light and tell me how you are.`);
 
 // ---------- speech out ----------
+// Voices vary a lot by browser. Neural voices ("Natural", "Online", Google's) sound human at a normal
+// pace; the older local ones sound slow and flat. Prefer neural, and Indian English when there is one.
+const PACES = [
+  { label: "Slower", rate: 0.88 },
+  { label: "Natural", rate: 1.04 },
+  { label: "Faster", rate: 1.18 },
+];
+let pace = 1;
+try {
+  const saved = localStorage.getItem("kin.pace");
+  if (saved !== null && PACES[Number(saved)]) pace = Number(saved);
+} catch { /* storage unavailable; use the default */ }
+
 let voice;
+function scoreVoice(v) {
+  let score;
+  if (/^en[-_]IN/i.test(v.lang)) score = 4;
+  else if (/^en[-_](GB|AU|IE)/i.test(v.lang)) score = 2;
+  else if (/^en/i.test(v.lang)) score = 1;
+  else return -1;
+  if (/natural|neural|online/i.test(v.name)) score += 6;
+  else if (/^google/i.test(v.name)) score += 3;
+  if (/female|heera|neerja|veena|sonia|libby|aria|jenny|samantha/i.test(v.name)) score += 1;
+  return score;
+}
 function pickVoice() {
-  const voices = speechSynthesis.getVoices();
-  voice =
-    voices.find((v) => /en-IN/i.test(v.lang) && /female|heera|neerja/i.test(v.name)) ||
-    voices.find((v) => /en-IN/i.test(v.lang)) ||
-    voices.find((v) => /Google UK English Female|Samantha|Aria|Jenny|Libby/i.test(v.name)) ||
-    voices.find((v) => /^en/i.test(v.lang));
+  voice = speechSynthesis
+    .getVoices()
+    .map((v) => [scoreVoice(v), v])
+    .filter(([score]) => score >= 0)
+    .sort((a, b) => b[0] - a[0])[0]?.[1];
 }
 if ("speechSynthesis" in window) {
   pickVoice();
   speechSynthesis.onvoiceschanged = pickVoice;
 }
 
+/** Splits on sentence ends only, so "2.5" and "Dr. Rao" stay whole. */
+const sentences = (text) => text.split(/(?<=[.!?])(?<!\b(?:Dr|Mr|Mrs|Ms|St)\.)\s+(?=[A-Z0-9"'“])/).map((t) => t.trim()).filter(Boolean);
+
+let speechRun = 0;
+function stopSpeaking() {
+  speechRun++;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+}
+
+/** Speaks one sentence at a time with a short breath between, which reads clearly without slowing every word. */
 function speak(text) {
   return new Promise((resolve) => {
-    if (!("speechSynthesis" in window)) return resolve();
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
-    u.rate = 0.95;
-    u.onend = u.onerror = () => resolve();
+    if (!("speechSynthesis" in window) || !text) return resolve();
+    stopSpeaking();
+    const run = speechRun;
+    const parts = sentences(text);
     setState("speaking");
-    speechSynthesis.speak(u);
+    const next = (i) => {
+      if (run !== speechRun || i >= parts.length) return resolve();
+      const u = new SpeechSynthesisUtterance(parts[i]);
+      if (voice) {
+        u.voice = voice;
+        u.lang = voice.lang;
+      }
+      u.rate = PACES[pace].rate;
+      u.onend = () => setTimeout(() => next(i + 1), 160);
+      u.onerror = () => resolve();
+      speechSynthesis.speak(u);
+    };
+    // Chrome can drop an utterance queued in the same tick as cancel()
+    setTimeout(() => next(0), 40);
   });
 }
+
+function showPace() {
+  $("paceLabel").textContent = `${PACES[pace].label} pace`;
+  $("paceBtn").setAttribute("aria-label", `Speaking pace: ${PACES[pace].label}`);
+}
+showPace();
+$("paceBtn").addEventListener("click", () => {
+  pace = (pace + 1) % PACES.length;
+  try { localStorage.setItem("kin.pace", String(pace)); } catch { /* not saved; still applies now */ }
+  showPace();
+  if (!busy) speak("This is how I'll sound.").then(() => setState("idle"));
+});
 
 // ---------- speech in ----------
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -99,7 +155,7 @@ if (Recognition) {
 function listen() {
   if (busy) return;
   if (!recognizer) return openComposer(true);
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  stopSpeaking();
   setText($("you"), "");
   setState("listening");
   try { recognizer.start(); } catch { /* already listening */ }
