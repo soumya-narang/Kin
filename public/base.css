@@ -29,6 +29,8 @@ svg { display: block; }
 
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 8px; }
+/* Text fields sit inside a pill that draws its own focus ring */
+input:focus-visible { outline: none; }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; overflow: hidden;

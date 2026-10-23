@@ -4,6 +4,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import express, { type NextFunction, type Request, type Response } from "express";
 import { KinAgent, type Speaker } from "./agent/agent.js";
 import { KinMcpClient } from "./agent/mcpClient.js";
+import { messageParent, takeDueSpeech } from "./care/conversation.js";
 import { currentInsights, requireProfile } from "./care/engine.js";
 import { config, createStore } from "./config.js";
 import { buildMcpServer } from "./mcp/server.js";
@@ -70,31 +71,44 @@ app.post("/api/talk", async (req, res) => {
   }
 });
 
-/** Reminders that are due now; the voice UI polls this and speaks them unprompted. */
+/**
+ * What Kin should say on its own right now: messages from the family, due
+ * reminders, or a check-in. The speaker polls this between conversations.
+ */
 app.get("/api/parent/due", async (_req, res) => {
-  const now = new Date().toISOString();
-  const due = (await store.listReminders()).filter((r) => r.status === "scheduled" && r.dueAt <= now);
-  for (const r of due) await store.updateReminder({ ...r, status: "delivered" });
-  res.json({ reminders: due.map((r) => r.message) });
+  res.json({ items: await takeDueSpeech(store) });
 });
 
 // ---------- Family dashboard ----------
 
 app.get("/api/family/overview", async (_req, res) => {
-  const [profile, insights, alerts, reminders, logs] = await Promise.all([
+  const [profile, insights, alerts, reminders, logs, messages] = await Promise.all([
     requireProfile(store),
     currentInsights(store),
     store.listAlerts(),
     store.listReminders(),
     store.listLogs(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()),
+    store.listMessages(),
   ]);
   res.json({
     profile,
     insights,
     alerts: alerts.slice(0, 20),
     reminders: reminders.filter((r) => r.status === "scheduled"),
-    recent: logs.slice(-25).reverse(),
+    recent: logs.slice(-40).reverse(),
+    messages: messages.slice(-30),
   });
+});
+
+const MAX_MESSAGE_CHARS = 500;
+
+app.post("/api/family/messages", async (req, res) => {
+  const { text, from } = req.body as { text?: string; from?: string };
+  if (!text?.trim()) return res.status(400).json({ error: "text is required" });
+  if (text.length > MAX_MESSAGE_CHARS) return res.status(413).json({ error: `messages are limited to ${MAX_MESSAGE_CHARS} characters` });
+  const profile = await requireProfile(store);
+  const author = profile.family.find((f) => f.name === from)?.name ?? profile.family[0]?.name ?? "Your family";
+  res.json({ message: await messageParent(store, author, text.trim()) });
 });
 
 app.post("/api/family/alerts/:id/ack", async (req, res) => {
@@ -112,6 +126,16 @@ app.get("/api/family/digest", async (_req, res) => {
   }
 });
 
+/** Demo only: has Kin start a check-in on the speaker now instead of waiting for the morning. */
+app.post("/api/demo/checkin", async (_req, res) => {
+  if (!config.demoReset) return res.status(403).json({ error: "demo tools are disabled on this deployment" });
+  const profile = await requireProfile(store);
+  const now = new Date().toISOString();
+  const message = `Hello ${profile.preferredName}, I haven't heard from you in a little while. How are you feeling?`;
+  await store.addReminder({ id: `checkin:demo:${now}`, createdAt: now, dueAt: now, message, status: "scheduled" });
+  res.json({ ok: true });
+});
+
 app.post("/api/demo/reset", async (_req, res) => {
   if (!config.demoReset) return res.status(403).json({ error: "demo reset is disabled on this deployment" });
   await seed(store);
@@ -124,7 +148,8 @@ app.use(express.static(path.resolve("public")));
 
 app.listen(config.port, () => {
   console.log(`[kin] listening on http://localhost:${config.port}`);
-  console.log(`[kin]   parent (simulated Alexa+): http://localhost:${config.port}/`);
+  console.log(`[kin]   start here:                http://localhost:${config.port}/`);
+  console.log(`[kin]   parent (simulated Alexa+): http://localhost:${config.port}/speaker.html`);
   console.log(`[kin]   family dashboard:          http://localhost:${config.port}/family.html`);
   console.log(`[kin]   MCP endpoint:              http://localhost:${config.port}/mcp`);
   console.log(`[kin]   agent: ${config.llm === "mock" ? "mock (no AWS)" : `Bedrock ${config.modelId}`}, storage: ${config.table ? `DynamoDB ${config.table}` : "local file"}`);

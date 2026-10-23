@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { currentInsights, evaluateAndEscalate, raiseAgentAlert, requireProfile } from "../care/engine.js";
+import { messageFamily, messageParent, recentlySaidByKin } from "../care/conversation.js";
 import { dayKey, normalizeSymptom, type Insights } from "../care/insights.js";
 import type { Store } from "../store/store.js";
 import type { LogEntry, Reminder } from "../types.js";
@@ -70,6 +71,8 @@ export function buildMcpServer(store: Store): McpServer {
       const insights = await currentInsights(store, now);
       const today = insights.days.find((d) => d.date === dayKey(now));
       const reminders = (await store.listReminders()).filter((r) => r.status === "scheduled");
+      const since = new Date(now.getTime() - DAY).toISOString();
+      const fromFamily = (await store.listMessages()).filter((m) => m.from === "family" && m.ts >= since);
       return json({
         now: now.toString(),
         person: {
@@ -90,6 +93,8 @@ export function buildMcpServer(store: Store): McpServer {
         })),
         last24h: logs.map((l) => ({ ts: l.ts, kind: l.kind, said: l.utterance, ...pick(l) })),
         upcomingReminders: reminders.map((r) => ({ dueAt: r.dueAt, message: r.message })),
+        messagesFromFamily: fromFamily.map((m) => ({ from: m.author, text: m.text, ts: m.ts, readAloud: Boolean(m.deliveredAt) })),
+        kinJustSaid: await recentlySaidByKin(store, now),
         care: briefInsights(insights),
       });
     },
@@ -234,6 +239,41 @@ export function buildMcpServer(store: Store): McpServer {
   );
 
   server.registerTool(
+    "message_family",
+    {
+      title: "Message the family",
+      description:
+        "Pass on something the person wants their family to hear, e.g. 'tell Priya I'm feeling better'. It reaches the family by text or email and on their dashboard.",
+      inputSchema: {
+        text: z.string().min(1).max(500).describe("The message, in the person's own words where possible"),
+        utterance,
+      },
+    },
+    async ({ text }) => {
+      const m = await messageFamily(store, text);
+      return json({ sent: true, channel: m.channel, text: m.text });
+    },
+  );
+
+  server.registerTool(
+    "message_parent",
+    {
+      title: "Message the parent",
+      description:
+        "Leave a message for the person Kin cares for. Kin reads it aloud on their speaker at the next quiet moment, never in the middle of a conversation.",
+      inputSchema: {
+        text: z.string().min(1).max(500).describe("What to say to them, e.g. 'I'll call you at 7'"),
+        from: z.string().optional().describe("The family member's name; defaults to the first family contact"),
+      },
+    },
+    async ({ text, from }) => {
+      const profile = await requireProfile(store);
+      const m = await messageParent(store, from || profile.family[0]?.name || "Your family", text);
+      return json({ queued: true, from: m.author, text: m.text });
+    },
+  );
+
+  server.registerTool(
     "get_family_briefing",
     {
       title: "Get family briefing",
@@ -248,12 +288,14 @@ export function buildMcpServer(store: Store): McpServer {
       const since = new Date(Date.now() - 2 * DAY).toISOString();
       const logs = await store.listLogs(since);
       const alerts = (await store.listAlerts()).filter((a) => a.ts >= since);
+      const fromParent = (await store.listMessages()).filter((m) => m.from === "parent" && m.ts >= since);
       return json({
         person: profile.preferredName,
         ...briefInsights(i),
         adherenceLast7Days: i.adherence.map((a) => ({ medication: a.medication, taken: a.taken, due: a.due })),
         recentlySaid: logs.filter((l) => l.utterance).slice(-8).map((l) => ({ ts: l.ts, said: l.utterance })),
         recentAlerts: alerts.map((a) => ({ ts: a.ts, level: a.level, title: a.title, acknowledged: a.acknowledged })),
+        messagesFromParent: fromParent.map((m) => ({ ts: m.ts, text: m.text })),
       });
     },
   );

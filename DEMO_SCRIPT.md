@@ -6,14 +6,14 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 
 - Start with `KIN_LLM=bedrock` and `KIN_SNS_TOPIC_ARN` set, so the Bedrock and SNS shots are real. Storage is a local file in this setup (no `KIN_TABLE`), so do not mention DynamoDB. Keep the subscribed inbox open in another tab.
 - Click **Reset demo** on the dashboard so Kamala's history is fresh.
-- Window layout: parent device at http://localhost:3000 on the left (open the "behind the scenes" panel), family dashboard at http://localhost:3000/family.html on the right. Use Chrome or Edge for voice.
+- Window layout: parent device at http://localhost:3000/speaker.html on the left (open the "behind the scenes" panel), family dashboard at http://localhost:3000/family.html on the right. Use Chrome or Edge for voice. Open http://localhost:3000 once for the opening shot.
 - Have the SNS message ready on a phone or inbox tab.
 
 ---
 
 ## 0:00 to 0:25. The problem
 
-**Screen:** Title card, then Kamala's profile on the dashboard (name, age, Pune).
+**Screen:** The Kin home page: "Kamala's speaker" and "Family view" side by side. Then Kamala's speaker.
 
 **Voiceover:**
 "Millions of older adults live alone while their children live far away. Kamala is 74 and lives alone in Pune. Her daughter lives abroad. She won't install an app, but she talks to Alexa every day. Kin is an Alexa+ care companion, built on MCP, that turns those everyday conversations into care her family can see."
@@ -48,24 +48,26 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 **Voiceover:**
 "That completes the pattern: dizziness lining up with missed blood-pressure doses. Kin tells the family on its own, and it tells Kamala that it did, so nothing happens behind her back."
 
-## 1:55 to 2:25. The family side
+## 1:55 to 2:30. The family answers
 
-**Screen:** Show the phone or inbox with the SNS message arriving, then the dashboard alert.
+**Screen:** The phone or inbox with the SNS message arriving, then the dashboard alert with its reasons.
 
 **Voiceover:**
 "Her daughter gets a message through Amazon SNS. It doesn't just say 'alert'. It says why: dizziness three times this week, each on or right after a missed blood-pressure dose. The dashboard shows the same finding with Kamala's own words."
 
-**Screen:** In **Ask Kin**, type or say: "How has Mum been sleeping?" Show the answer and the daily digest.
+**Screen:** Tap **Send a message** on the alert, pick "Please sit down and have some water. I'll call you soon.", send it. Cut to the speaker: within a few seconds it shows "Message from Priya" and reads it aloud.
 
 **Voiceover:**
-"The family can ask questions. Same MCP server, same care record."
+"Priya replies right from the alert. Kin waits for a quiet moment and reads it to Kamala in the kitchen. Same MCP server, same care record."
 
-## 2:25 to 2:45. Safety by design
+## 2:30 to 2:45. Kamala answers back
 
-**Screen:** Optional quick cut: say "I fell in the kitchen" and show the immediate escalation, or show the cooldown note on the alert.
+**Say aloud to the device:** "Tell Priya I'm feeling better now, don't worry."
+
+**Screen:** `message_family` in the behind-the-scenes panel, then the reply appearing in the dashboard's message thread.
 
 **Voiceover:**
-"Patterns, not pings: one alert per pattern every twelve hours. A fall or chest pain escalates immediately, and Kamala is told to call emergency services. Kin never diagnoses. The care engine is deterministic; the model explains what it found, it doesn't invent it."
+"And Kamala answers back in her own words. Patterns, not pings: one alert per pattern every twelve hours, and Kin never diagnoses."
 
 ## 2:45 to 3:00. What's real, and close
 
@@ -83,3 +85,5 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 - If voice recognition misfires, type the line in the device's text box; the tool-call panel looks the same.
 - Do not skip the "simulated" line at the end. Judges will check the claim against the repo.
 - The alert goes out as an **email** through SNS, not SMS. Say "email".
+- The speaker checks for messages every 6 seconds. Keep it idle (not mid-sentence) after Priya sends, or the message waits until Kamala's turn ends.
+- For a shot of Kin starting the conversation itself, use **Have Kin check in now** at the bottom of the dashboard.

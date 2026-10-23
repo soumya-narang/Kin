@@ -9,7 +9,7 @@ export const config = {
   port: Number(env.PORT ?? 3000),
   householdId: env.KIN_HOUSEHOLD_ID || "demo",
   mcpToken: env.KIN_MCP_TOKEN || "",
-  /** The demo reset endpoint wipes the care record; turn it off on a public deployment */
+  /** Demo tools (reset wipes the care record, check-in on demand); turn them off on a public deployment */
   demoReset: env.KIN_DISABLE_DEMO_RESET !== "true",
   llm: (env.KIN_LLM || "bedrock") as "bedrock" | "anthropic" | "openai" | "mock",
   openaiBaseUrl: env.KIN_OPENAI_BASE_URL || "https://api.groq.com/openai/v1",

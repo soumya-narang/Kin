@@ -12,8 +12,8 @@
 <body class="family first">
   <header class="bar">
     <div class="bar-in">
-      <span class="mark">Kin</span>
-      <a class="quiet" href="/" target="_blank" rel="noopener">
+      <a class="mark" href="/">Kin</a>
+      <a class="quiet" href="speaker.html" target="_blank" rel="noopener">
         <span id="speakerLink">Open the speaker</span>
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 5H5.8A1.8 1.8 0 0 0 4 6.8v7.4A1.8 1.8 0 0 0 5.8 16h7.4a1.8 1.8 0 0 0 1.8-1.8V12.5M11 4h5v5M16 4l-6.5 6.5"/></svg>
       </a>
@@ -25,13 +25,19 @@
 
     <div class="cols">
       <div class="col">
-        <section class="card" style="--i:1;--o:2">
+        <section class="card" style="--i:1;--o:4">
           <h2>What Kin noticed</h2>
           <p class="lede">Patterns across the last two weeks, not single moments.</p>
           <div class="body" id="findings"></div>
         </section>
 
-        <section class="card" style="--i:2;--o:4">
+        <section class="card" style="--i:2;--o:3">
+          <h2 id="dayTitle">Their day</h2>
+          <p class="lede" id="dayLede">Today, in order.</p>
+          <ol class="day-list body" id="day"></ol>
+        </section>
+
+        <section class="card" style="--i:3;--o:6">
           <h2>The last 14 days</h2>
           <p class="lede">Medicine doses and symptoms, day by day.</p>
           <div class="body">
@@ -45,26 +51,36 @@
           </div>
         </section>
 
-        <section class="card" style="--i:3;--o:5">
+        <section class="card" style="--i:4;--o:7">
           <h2>Mood and sleep</h2>
           <p class="lede">The last three days against the week before.</p>
           <div class="body pair" id="vitals"></div>
         </section>
 
-        <section class="card" style="--i:4;--o:7">
-          <h2 id="wordsTitle">In their own words</h2>
-          <div class="body" id="quotes"></div>
-        </section>
       </div>
 
       <div class="col">
         <section class="card" style="--i:2;--o:1">
-          <h2>Messages from Kin</h2>
-          <p class="lede">What Kin has told you, and why.</p>
+          <h2>Alerts from Kin</h2>
+          <p class="lede">When a pattern needs you, and why.</p>
           <div class="body" id="alerts"></div>
         </section>
 
-        <section class="card" style="--i:3;--o:3">
+        <section class="card" id="convCard" style="--i:3;--o:2">
+          <h2 id="convTitle">Messages</h2>
+          <p class="lede" id="convLede">Kin reads your messages aloud on the speaker at a quiet moment.</p>
+          <div class="thread body" id="thread" aria-live="polite"></div>
+          <div class="quick" id="quick"></div>
+          <form class="compose" id="compose" autocomplete="off">
+            <button type="button" class="mic" id="mic" aria-label="Speak your message" hidden>
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3" width="5" height="9" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/></svg>
+            </button>
+            <input id="composeText" maxlength="500" aria-label="Write a message" placeholder="Write a message…" />
+            <button type="submit" class="go" aria-label="Send"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9"/></svg></button>
+          </form>
+        </section>
+
+        <section class="card" style="--i:4;--o:5">
           <h2>Ask Kin</h2>
           <p class="lede" id="askLede">Ask in your own words.</p>
           <form class="ask" id="ask" autocomplete="off">
@@ -82,7 +98,7 @@
           </div>
         </section>
 
-        <section class="card" style="--i:4;--o:6">
+        <section class="card" style="--i:5;--o:8">
           <h2>Medicines this week</h2>
           <div class="body" id="adherence"></div>
         </section>
@@ -90,7 +106,7 @@
       </div>
     </div>
 
-    <p class="foot-note"><span>Kin shares what was said and what it noticed. It never diagnoses.</span><button id="reset">Reset demo history</button></p>
+    <p class="foot-note"><span>Kin shares what was said and what it noticed. It never diagnoses.</span><button id="checkin">Have Kin check in now</button><button id="reset">Reset demo history</button></p>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite">

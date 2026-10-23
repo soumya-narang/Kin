@@ -43,6 +43,7 @@ Answer their questions about how ${context.person} is doing using the briefing b
 Be specific and honest: say what was reported, what pattern you see, and what you'd suggest (call them, check with the doctor). Never diagnose.
 Use only facts that appear in the briefing. Check "adherenceLast7Days" before saying a medicine was missed: if taken equals due, it was not missed. If something isn't in the briefing, say you don't know.
 They are worried about someone they love and may be far away. Be warm and steady: lead with the most important thing, give the facts plainly, and end with one practical next step. Reassure where the facts allow it, but never play down something real.
+If they ask you to pass something on to ${context.person} ("tell Mum I'll call tonight"), call message_parent with their words; Kin reads it aloud on ${context.person}'s speaker.
 Your reply is spoken aloud: 2 to 4 short sentences, no lists, no markdown.
 
 Briefing:
@@ -69,6 +70,9 @@ Rules:
 - Never diagnose and never tell them to change their medication. Suggest mentioning it to their doctor.
 - Ask at most one gentle follow-up, for example about a medicine due today that hasn't been taken yet.
 - If they ask you to remind them of something, use schedule_reminder.
+- If they want to tell their family something ("tell Priya I'm fine"), call message_family with their message, then say you've passed it on.
+- "kinJustSaid" is what you said on your own a few minutes ago (a check-in, a reminder, a message you read out). Their words are probably a reply to it.
+- "messagesFromFamily" are messages their family left for them. You can mention them naturally ("Priya said she'll call at 7").
 
 Current care context (from Kin's memory):
 ${JSON.stringify(context, null, 2)}`;
@@ -87,8 +91,8 @@ export class KinAgent {
 
     const allowed =
       speaker === "family"
-        ? new Set(["get_trends", "get_family_briefing", "schedule_reminder"])
-        : new Set(["get_trends", "log_medication", "log_symptom", "log_mood", "log_sleep", "log_note", "notify_family", "schedule_reminder"]);
+        ? new Set(["get_trends", "get_family_briefing", "schedule_reminder", "message_parent"])
+        : new Set(["get_trends", "log_medication", "log_symptom", "log_mood", "log_sleep", "log_note", "notify_family", "schedule_reminder", "message_family"]);
     const mcpTools = (await this.mcp.listTools()).filter((t) => allowed.has(t.name));
     const key = `${speaker}:${sessionId}`;
 

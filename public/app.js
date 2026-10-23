@@ -3,6 +3,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const orb = $("orb");
 const sessionId = crypto.randomUUID();
 let busy = false;
+let announcing = false;
 let turnCount = 0;
 
 // ---------- small helpers ----------
@@ -39,7 +40,8 @@ fetch("/api/family/overview")
   .then((r) => (r.ok ? r.json() : null))
   .then((d) => {
     const name = d?.profile?.preferredName;
-    if (!busy) setText($("kin"), `${greeting()}${name ? `, ${name}` : ""}. Tap the light and tell me how you are.`);
+    if (name) $("owner").textContent = `${name}'s speaker`;
+    if (!busy && !announcing) setText($("kin"), `${greeting()}${name ? `, ${name}` : ""}. Tap the light and tell me how you are.`);
   })
   .catch(() => setText($("kin"), `${greeting()}. Tap the light and tell me how you are.`));
 setText($("kin"), `${greeting()}. Tap the light and tell me how you are.`);
@@ -172,6 +174,7 @@ function setState(s) {
 async function send(text) {
   if (busy) return;
   busy = true;
+  $("you").classList.remove("from");
   setText($("you"), text);
   setText($("kin"), "");
   $("notified").classList.remove("show");
@@ -299,19 +302,32 @@ $("composerForm").addEventListener("submit", (e) => {
   send(t);
 });
 
-// ---------- proactive reminders ----------
+// ---------- Kin speaking first: family messages, reminders, check-ins ----------
+
+async function announce(item) {
+  $("notified").classList.remove("show");
+  document.body.classList.remove("alerting");
+  $("you").classList.toggle("from", item.kind === "message");
+  setText($("you"), item.kind === "message" ? `Message from ${item.author}` : "");
+  setText($("kin"), item.kind === "message" && item.body ? `“${item.body}”` : item.text);
+  await speak(item.text);
+  setState("idle");
+}
+
 setInterval(async () => {
-  if (busy) return;
+  if (busy || announcing) return;
+  announcing = true;
   try {
-    const { reminders } = await (await fetch("/api/parent/due")).json();
-    for (const r of reminders) {
-      setText($("you"), "");
-      setText($("kin"), r);
-      await speak(r);
-      setState("idle");
+    const { items } = await (await fetch("/api/parent/due")).json();
+    for (const item of items) {
+      if (busy) break;
+      await announce(item);
     }
   } catch { /* server restarting */ }
-}, 15000);
+  finally {
+    announcing = false;
+  }
+}, 6000);
 
 // ---------- wiring ----------
 orb.addEventListener("click", listen);

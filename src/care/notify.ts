@@ -33,3 +33,22 @@ export async function notifyFamily(profile: Profile, alert: Omit<Alert, "channel
     return "dashboard";
   }
 }
+
+/** Passes on something the parent asked Kin to tell the family. */
+export async function sendFamilyMessage(profile: Profile, text: string): Promise<Alert["channel"]> {
+  console.log(`[kin] message from ${profile.preferredName} to the family: ${text}`);
+  if (!sns) return "dashboard";
+  try {
+    await sns.send(
+      new PublishCommand({
+        TopicArn: config.snsTopicArn,
+        Subject: `Kin: a message from ${profile.preferredName}`.slice(0, 99),
+        Message: `${profile.preferredName} asked Kin to tell you:\n\n"${text}"\n\nReply from the Kin family dashboard and Kin will read it to them.`,
+      }),
+    );
+    return "sns";
+  } catch (err) {
+    console.error("[kin] SNS publish failed, message kept on dashboard:", (err as Error).message);
+    return "dashboard";
+  }
+}

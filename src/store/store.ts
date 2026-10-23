@@ -1,4 +1,4 @@
-import type { Alert, LogEntry, Profile, Reminder } from "../types.js";
+import type { Alert, LogEntry, Message, Profile, Reminder } from "../types.js";
 
 /** Everything Kin remembers about one household, across sessions. */
 export interface Store {
@@ -17,6 +17,11 @@ export interface Store {
   addReminder(reminder: Reminder): Promise<void>;
   updateReminder(reminder: Reminder): Promise<void>;
   listReminders(): Promise<Reminder[]>;
+
+  addMessage(message: Message): Promise<void>;
+  updateMessage(message: Message): Promise<void>;
+  /** Oldest first */
+  listMessages(): Promise<Message[]>;
 
   /** Wipe the household (used by the demo seeder) */
   clear(): Promise<void>;

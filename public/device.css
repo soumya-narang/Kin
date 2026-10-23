@@ -25,6 +25,9 @@ body.device.alerting { --glow: 238, 170, 96; --o1: #fbe3c4; --o2: #efb06f; --o3:
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 28px; }
 .clock .t { font-family: var(--font-display); font-size: 1.375rem; font-weight: 300; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
 .clock .d { font-size: 0.8125rem; color: var(--text-3); letter-spacing: 0.005em; }
+.clock .owner { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 0.75rem; color: var(--text-2); letter-spacing: 0.01em; }
+.clock .owner:empty { display: none; }
+.clock .owner::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--glow)); box-shadow: 0 0 8px rgba(var(--glow), 0.8); }
 .actions { display: flex; gap: 8px; }
 .ghost {
   display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 15px;
@@ -93,6 +96,7 @@ body.device.alerting { --glow: 238, 170, 96; --o1: #fbe3c4; --o2: #efb06f; --o3:
 
 .caption { width: min(30em, 100%); text-align: center; }
 .caption .you { min-height: 1.5em; margin-bottom: 10px; font-size: 1.0625rem; color: var(--text-3); }
+.caption .you.from { color: #9fd0e4; font-weight: 500; letter-spacing: 0.005em; }
 .caption .kin {
   min-height: 3.9em; font-family: var(--font-display); font-weight: 500;
   font-size: clamp(1.375rem, 2.6vw, 1.875rem); line-height: 1.3; letter-spacing: -0.018em; text-wrap: balance;

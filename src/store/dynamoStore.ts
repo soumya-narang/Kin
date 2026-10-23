@@ -6,13 +6,13 @@ import {
   PutCommand,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { Alert, LogEntry, Profile, Reminder } from "../types.js";
+import type { Alert, LogEntry, Message, Profile, Reminder } from "../types.js";
 import type { Store } from "./store.js";
 
 /**
  * Single-table DynamoDB store. One partition per household:
  *   pk = HH#<householdId>
- *   sk = PROFILE | LOG#<ts>#<id> | ALERT#<ts>#<id> | REMINDER#<id>
+ *   sk = PROFILE | LOG#<ts>#<id> | ALERT#<ts>#<id> | REMINDER#<id> | MSG#<ts>#<id>
  */
 export class DynamoStore implements Store {
   private db: DynamoDBDocumentClient;
@@ -90,6 +90,18 @@ export class DynamoStore implements Store {
 
   async listReminders() {
     return (await this.query<Reminder>("REMINDER#")).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  }
+
+  addMessage(message: Message) {
+    return this.put(`MSG#${message.ts}#${message.id}`, message);
+  }
+
+  updateMessage(message: Message) {
+    return this.addMessage(message);
+  }
+
+  listMessages() {
+    return this.query<Message>("MSG#");
   }
 
   async clear() {

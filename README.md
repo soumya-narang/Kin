@@ -17,8 +17,9 @@ Kin logs it, remembers it across days, and notices what no single conversation c
 | **Kin MCP server** (`src/mcp`) | MCP server on Streamable HTTP, protocol `2025-11-25`. Tools for logging medication, symptoms, mood, sleep and notes; reading trends; notifying family; scheduling spoken reminders; and a family briefing. All state is persisted, so it works across sessions and devices. |
 | **Care engine** (`src/care`) | Turns two weeks of logs into findings: medication adherence, recurring symptoms, mood and sleep drift, red-flag symptoms, and cross-signal patterns (symptoms that line up with missed doses). Escalates to family automatically, at most once per pattern every 12 hours. The engine is deterministic: the model explains and acts on findings, it never invents them. |
 | **Voice agent** (`src/agent`) | Amazon Bedrock (Converse API with tool use) acting as the Alexa+ side. It connects to the Kin MCP server as an MCP client, the same way Alexa+ would. |
-| **Simulated Alexa+ device** (`public/index.html`) | Voice in and voice out in the browser, with a live "behind the scenes" panel showing every MCP tool call. Speaks scheduled reminders on its own. |
-| **Family dashboard** (`public/family.html`) | Care level, what Kin noticed and why, the alerts sent, a 14-day medication/symptom/mood timeline, mood and sleep trends, an AI-written daily digest, and "Ask Kin" for questions like "How has Mum been sleeping?". |
+| **Conversation** (`src/care/conversation.ts`) | Messages both ways between the family and the parent, and the check-ins Kin starts on its own: a morning hello when nothing has been heard, and a gentle nudge 30 minutes after a dose is due, well before it counts as missed. |
+| **Simulated Alexa+ device** (`public/speaker.html`) | Voice in and voice out in the browser, with a live "behind the scenes" panel showing every MCP tool call. Between conversations it speaks family messages, reminders and check-ins on its own. |
+| **Family dashboard** (`public/family.html`) | Care level, what Kin noticed and why, the alerts sent, the parent's day as a story, messages both ways (typed or dictated), a 14-day medication/symptom timeline, mood and sleep trends, an AI-written daily digest, and "Ask Kin" for questions like "How has Mum been sleeping?". |
 
 ## Architecture
 
@@ -46,6 +47,8 @@ The parent's device and the family's questions go through the **same MCP server*
 | `notify_family` | Agent-initiated message to the family (for example, an emergency) |
 | `schedule_reminder` | A reminder Kin speaks later |
 | `get_family_briefing` | Summary for family members asking how their parent is |
+| `message_family` | Pass on something the parent says ("tell Priya I'm feeling better") by SMS/email and the dashboard |
+| `message_parent` | Leave a message that Kin reads aloud on the parent's speaker at the next quiet moment |
 
 Resources: `kin://household/profile`, `kin://household/insights`.
 
@@ -59,11 +62,12 @@ cp .env.example .env      # set KIN_LLM=mock to run without AWS
 npm start
 ```
 
-- Parent device (simulated Alexa+): http://localhost:3000 (use Chrome or Edge for voice)
+- Start here: http://localhost:3000 (choose the parent's speaker or the family view)
+- Parent device (simulated Alexa+): http://localhost:3000/speaker.html (use Chrome or Edge for voice)
 - Family dashboard: http://localhost:3000/family.html
 - MCP endpoint: http://localhost:3000/mcp
 
-On first start the server loads a demo household: Kamala, 74, in Pune, with two weeks of history. Over the last four days her BP tablet has been missed twice, dizziness has appeared twice, and her mood and sleep have slipped. Say *"I'm feeling dizzy again"* and Kin completes the pattern and alerts her daughter. **Reset demo** on the dashboard reloads the history.
+On first start the server loads a demo household: Kamala, 74, in Pune, with two weeks of history. Over the last four days her BP tablet has been missed twice, dizziness has appeared twice, and her mood and sleep have slipped. Say *"I'm feeling dizzy again"* and Kin completes the pattern and alerts her daughter. Reply from the dashboard and Kin reads it aloud on the speaker; say *"Tell Priya I'm feeling better"* and it comes back to the dashboard. **Have Kin check in now** and **Reset demo history** at the bottom of the dashboard trigger a check-in on cue and reload the history.
 
 To inspect the MCP server with any MCP client:
 
@@ -98,7 +102,7 @@ The tests need no AWS credentials. They run in CI on every push.
    ```
 4. **Seed:** `npm run seed`
 5. **Time zone:** set `TZ` to the parent's IANA zone (for example `Asia/Kolkata`). Medication times and the "no check-in today" rule use the server's local time, and hosted containers default to UTC.
-6. **Host:** the included `Dockerfile` runs on AWS App Runner or ECS. Set `KIN_MCP_TOKEN` so `/mcp` requires a bearer token once it is public, and set `KIN_DISABLE_DEMO_RESET=true` so nobody can wipe the care record. The family dashboard and its `/api` routes have no login in this version, so put them behind your own access control before using real data. IAM needs `bedrock:InvokeModel`, `dynamodb:GetItem/PutItem/Query/BatchWriteItem` on the table, and `sns:Publish` on the topic.
+6. **Host:** the included `Dockerfile` runs on AWS App Runner or ECS. Set `KIN_MCP_TOKEN` so `/mcp` requires a bearer token once it is public, and set `KIN_DISABLE_DEMO_RESET=true` so nobody can wipe the care record or trigger demo check-ins. The family dashboard and its `/api` routes have no login in this version, so put them behind your own access control before using real data. IAM needs `bedrock:InvokeModel`, `dynamodb:GetItem/PutItem/Query/BatchWriteItem` on the table, and `sns:Publish` on the topic.
 
 ## Design choices
 

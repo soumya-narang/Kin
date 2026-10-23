@@ -1,6 +1,7 @@
 import type { Speaker, ToolTrace, TurnResult } from "./agent.js";
 import type { KinMcpClient } from "./mcpClient.js";
 
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 const WORDS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
 /**
@@ -29,7 +30,8 @@ export async function mockTurn(mcp: KinMcpClient, speaker: Speaker, text: string
   const results: any[] = [];
   let emergency = false;
 
-  const said = { tookMed: "", skippedMed: "", symptom: "", low: false, good: false, slept: 0, reminder: false };
+  const family = ctx.family?.[0]?.name ?? "your family";
+  const said = { tookMed: "", skippedMed: "", symptom: "", low: false, good: false, slept: 0, reminder: false, relayed: "" };
 
   if (/chest pain|i fell|had a fall|can'?t breathe|fainted/.test(lower)) {
     emergency = true;
@@ -67,19 +69,25 @@ export async function mockTurn(mcp: KinMcpClient, speaker: Speaker, text: string
     results.push(await call("log_sleep", { hours, utterance: text }));
     said.slept = hours;
   }
+  const relay = text.match(/\btell (priya|arjun|my daughter|my son|the family|them|her|him)\b,? (?:that )?(.+)/i);
+  if (relay) {
+    await call("message_family", { text: relay[2].replace(/[.!]+$/, ""), utterance: text });
+    said.relayed = /priya|arjun/i.test(relay[1]) ? cap(relay[1]) : family;
+  }
   if (/remind me/.test(lower)) {
     await call("schedule_reminder", { message: text.replace(/.*remind me (to )?/i, "Time to "), inMinutes: 60 });
     said.reminder = true;
   }
 
   const notified = results.find((r) => r?.familyNotified)?.familyNotified;
-  const family = ctx.family?.[0]?.name ?? "your family";
   let reply: string;
   if (emergency) {
     await call("notify_family", { level: "urgent", title: `${name} may need help`, message: `${name} said: "${text}"` });
     reply = `${name}, please call emergency services right now. I've told ${family} as well, so help is on the way from both sides.`;
   } else if (notified) {
     reply = `Oh ${name}, I'm sorry you're ${/dizz|light/.test(said.symptom) ? "feeling dizzy again" : "not feeling well"}. It's happened a few times this week, so I've asked ${family} to give you a call. For now, please sit down and have a glass of water.`;
+  } else if (said.relayed) {
+    reply = `Of course, ${name}. I've passed that on to ${said.relayed}.`;
   } else if (said.symptom) {
     reply = `I'm sorry, ${name}, that doesn't sound pleasant. Take it slowly, and sit down if you need to. I'll keep an eye on it.`;
   } else if (said.skippedMed) {

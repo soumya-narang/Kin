@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { Alert, LogEntry, Profile, Reminder } from "../types.js";
+import type { Alert, LogEntry, Message, Profile, Reminder } from "../types.js";
 import type { Store } from "./store.js";
 
 interface Household {
@@ -8,9 +8,10 @@ interface Household {
   logs: LogEntry[];
   alerts: Alert[];
   reminders: Reminder[];
+  messages: Message[];
 }
 
-const empty = (): Household => ({ logs: [], alerts: [], reminders: [] });
+const empty = (): Household => ({ logs: [], alerts: [], reminders: [], messages: [] });
 
 /** Local JSON file store, for development and offline demos. */
 export class FileStore implements Store {
@@ -90,6 +91,21 @@ export class FileStore implements Store {
 
   async listReminders() {
     return [...(await this.load()).reminders].sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  }
+
+  async addMessage(message: Message) {
+    (await this.load()).messages.push(message);
+    await this.save();
+  }
+
+  async updateMessage(message: Message) {
+    const h = await this.load();
+    h.messages = h.messages.map((m) => (m.id === message.id ? message : m));
+    await this.save();
+  }
+
+  async listMessages() {
+    return [...(await this.load()).messages].sort((a, b) => a.ts.localeCompare(b.ts));
   }
 
   async clear() {

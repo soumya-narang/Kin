@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { config, createStore } from "./config.js";
 import type { Store } from "./store/store.js";
-import type { LogEntry, Profile } from "./types.js";
+import type { LogEntry, Message, Profile } from "./types.js";
 
 export const demoProfile = (householdId: string): Profile => ({
   householdId,
@@ -64,10 +64,21 @@ export function demoHistory(now = new Date()): LogEntry[] {
   return logs.sort((a, b) => a.ts.localeCompare(b.ts));
 }
 
+/** A short exchange from earlier in the week, so the family's conversation isn't empty. */
+export function demoMessages(now = new Date()): Message[] {
+  const at = (daysAgo: number, h: number, m = 0) =>
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo, h, m).toISOString();
+  return [
+    { id: randomUUID(), ts: at(5, 19, 10), from: "family", author: "Priya", text: "Riya's school play is on Sunday. I'll send you the video, Amma!", deliveredAt: at(5, 19, 12) },
+    { id: randomUUID(), ts: at(5, 19, 14), from: "parent", author: "Kamala", text: "I can't wait to see it. Tell Riya I'm very proud of her.", channel: "dashboard" },
+  ];
+}
+
 export async function seed(store: Store, now = new Date()) {
   await store.clear();
   await store.saveProfile(demoProfile(config.householdId));
   for (const log of demoHistory(now)) await store.addLog(log);
+  for (const message of demoMessages(now)) await store.addMessage(message);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

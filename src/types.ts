@@ -73,3 +73,17 @@ export interface Reminder {
   message: string;
   status: "scheduled" | "delivered";
 }
+
+export interface Message {
+  id: string;
+  ts: string;
+  /** "family" messages are read aloud on the parent's speaker; "parent" messages go to the family */
+  from: "family" | "parent";
+  /** Who sent it, e.g. "Priya" or "Kamala" */
+  author: string;
+  text: string;
+  /** Family messages: when Kin read it aloud */
+  deliveredAt?: string;
+  /** Parent messages: how the family was reached */
+  channel?: "dashboard" | "sns";
+}

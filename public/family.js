@@ -2,6 +2,7 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const sessionId = crypto.randomUUID();
 const seenAlerts = new Set();
+const seenMessages = new Set();
 let firstLoad = true;
 let lastKey = "";
 let profileName = "";
@@ -34,11 +35,11 @@ async function load() {
 
 function render(data) {
   const { generatedAt, ...insights } = data.insights;
-  const key = JSON.stringify([data.profile, insights, data.alerts, data.recent]) + Math.floor(Date.now() / 60000);
+  const key = JSON.stringify([data.profile, insights, data.alerts, data.recent, data.messages]) + Math.floor(Date.now() / 60000);
   if (key === lastKey) return;
   lastKey = key;
 
-  const { profile: p, alerts, recent } = data;
+  const { profile: p, alerts, recent, messages = [] } = data;
   profileName = p.preferredName;
   document.title = `${p.preferredName} · Kin`;
 
@@ -48,12 +49,16 @@ function render(data) {
   renderVitals(insights.days);
   renderAlerts(alerts);
   renderAdherence(insights.adherence);
-  renderQuotes(recent);
+  renderDay(p, recent);
+  renderThread(p, messages, alerts);
 
   $("speakerLink").textContent = `Open ${p.preferredName}'s speaker`;
   $("askLede").textContent = `Ask about ${p.preferredName} in your own words.`;
   $("askText").placeholder = `How has ${p.preferredName} been sleeping?`;
-  $("wordsTitle").textContent = `In ${p.preferredName}'s own words`;
+  $("dayTitle").textContent = `${p.preferredName}'s day`;
+  $("convTitle").textContent = `Messages with ${p.preferredName}`;
+  $("convLede").textContent = `Kin reads your messages aloud on ${p.preferredName}'s speaker at a quiet moment, and passes on what ${p.preferredName} says back.`;
+  $("composeText").placeholder = `Write to ${p.preferredName}…`;
   if (!$("sugg").children.length) {
     $("sugg").innerHTML = [`How has ${p.preferredName} been sleeping?`, `Did ${p.preferredName} take today's tablets?`, "Is there anything I should worry about?"]
       .map((q) => `<button type="button">${esc(q)}</button>`)
@@ -97,7 +102,7 @@ function renderAlerts(alerts) {
             <h3>${esc(a.title)}</h3>
             <p>${esc(a.message)}</p>
             ${a.reasons.length ? `<ul>${a.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
-            <div class="foot">${a.acknowledged ? `<span class="done">${CHECK}You are on it</span>` : `<button class="btn" data-ack="${esc(a.id)}">I'll call them</button>`}</div>
+            <div class="foot">${a.acknowledged ? `<span class="done">${CHECK}You are on it</span>` : `<button class="btn" data-ack="${esc(a.id)}">I'll call them</button>`}<button class="btn soft" data-reply>Send a message</button></div>
           </article>`;
         })
         .join("")
@@ -193,12 +198,149 @@ function renderAdherence(list) {
     .join("");
 }
 
-function renderQuotes(recent) {
-  const quotes = recent.filter((l) => l.utterance).slice(0, 5);
-  $("quotes").innerHTML = quotes.length
-    ? quotes.map((l) => `<div class="quote"><q>“${esc(l.utterance)}”</q><div class="when">${timeAgo(l.ts)}</div></div>`).join("")
-    : `<p class="empty">Nothing said yet today.</p>`;
+// ---- their day, as a story rather than a chart ----
+
+const fmtHours = (h) => `${Number.isInteger(h) ? h : h.toFixed(1)} ${h === 1 ? "hour" : "hours"}`;
+function describe(l) {
+  switch (l.kind) {
+    case "medication":
+      return l.taken === false ? [`Skipped ${l.medication}`, "low"] : [`Took ${l.medication}`, "good"];
+    case "symptom":
+      return [`Mentioned ${l.symptom}${(l.severity ?? 0) >= 4 ? ", quite badly" : ""}`, "care"];
+    case "mood":
+      return l.mood <= 2 ? ["Feeling low", "low"] : l.mood >= 4 ? ["In good spirits", "good"] : ["Feeling okay", ""];
+    case "sleep":
+      return [`Slept about ${fmtHours(l.sleepHours)}`, l.sleepHours < 6 ? "low" : ""];
+    default:
+      return [l.text || "Shared a note", ""];
+  }
 }
+
+function renderDay(p, recent) {
+  const dayOf = (iso) => new Date(iso).toDateString();
+  const latest = recent[0] && dayOf(recent[0].ts);
+  const entries = recent.filter((l) => latest && dayOf(l.ts) === latest).reverse();
+  if (!entries.length) {
+    $("dayLede").textContent = "Nothing heard in the last few days.";
+    $("day").innerHTML = "";
+    return;
+  }
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  $("dayLede").textContent =
+    latest === today ? "Today, in order." : latest === yesterday ? "Yesterday. Nothing yet today." : new Date(recent[0].ts).toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+  $("day").innerHTML = entries
+    .map((l) => {
+      const [what, tone] = describe(l);
+      const time = new Date(l.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      return `<li class="${tone}"><time>${time}</time><div><b>${esc(what)}</b>${l.utterance ? `<q>“${esc(l.utterance)}”</q>` : ""}</div></li>`;
+    })
+    .join("");
+}
+
+// ---- messages both ways ----
+
+let threadKey = "";
+function renderThread(p, messages, alerts) {
+  const key = JSON.stringify(messages);
+  if (key !== threadKey) {
+    const fresh = !firstLoad;
+    $("thread").innerHTML = messages.length
+      ? messages
+          .map((m) => {
+            const isNew = fresh && !seenMessages.has(m.id);
+            const when = timeAgo(m.ts);
+            const meta =
+              m.from === "family"
+                ? `${esc(m.author)} · ${when} · ${m.deliveredAt ? `<span class="heard">Read aloud to ${esc(p.preferredName)}</span>` : "Waiting for a quiet moment"}`
+                : `${esc(m.author)} · ${when}${m.channel === "sns" ? " · Also sent to you by text" : ""}`;
+            return `<div class="b ${m.from === "family" ? "out" : "in"}${isNew ? " new" : ""}"><p>${esc(m.text)}</p><div class="meta">${meta}</div></div>`;
+          })
+          .join("")
+      : `<p class="empty">No messages yet. Anything you write here, Kin reads aloud to ${esc(p.preferredName)}.</p>`;
+    $("thread").scrollTop = $("thread").scrollHeight;
+    if (fresh) {
+      const reply = messages.find((m) => m.from === "parent" && !seenMessages.has(m.id));
+      if (reply) announce({ title: `${reply.author} sent you a message`, reasons: [reply.text], message: reply.text });
+    }
+    messages.forEach((m) => seenMessages.add(m.id));
+    threadKey = key;
+  }
+
+  const worried = alerts.some((a) => !a.acknowledged);
+  const quick = worried
+    ? ["I'll call you this evening.", "Please sit down and have some water. I'll call you soon."]
+    : ["Thinking of you today.", "I'll call you this evening."];
+  const html = quick.map((q) => `<button type="button">${esc(q)}</button>`).join("");
+  if ($("quick").innerHTML !== html) $("quick").innerHTML = html;
+}
+
+async function sendMessage(text) {
+  const btn = $("compose").querySelector(".go");
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/family/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    $("composeText").value = "";
+    lastKey = "";
+    await load();
+  } catch (err) {
+    $("composeText").value = text;
+    announce({ title: "Message not sent", reasons: [err.message || "Please try again."], message: "" });
+  } finally {
+    btn.disabled = false;
+  }
+}
+$("compose").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("composeText").value.trim();
+  if (text) sendMessage(text);
+});
+$("quick").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  $("composeText").value = b.textContent;
+  $("composeText").focus();
+});
+
+function focusComposer() {
+  const card = $("convCard");
+  card.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  card.classList.remove("flash");
+  void card.offsetWidth;
+  card.classList.add("flash");
+  setTimeout(() => $("composeText").focus({ preventScroll: true }), 350);
+}
+
+// Speak a message instead of typing it
+(() => {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) return;
+  const mic = $("mic");
+  mic.hidden = false;
+  const r = new Recognition();
+  r.lang = "en-IN";
+  r.interimResults = true;
+  let base = "";
+  r.onresult = (e) => {
+    $("composeText").value = (base + " " + Array.from(e.results).map((x) => x[0].transcript).join("")).trim();
+  };
+  r.onend = r.onerror = () => {
+    mic.classList.remove("on");
+    mic.setAttribute("aria-label", "Speak your message");
+  };
+  mic.addEventListener("click", () => {
+    if (mic.classList.contains("on")) return r.stop();
+    base = $("composeText").value.trim();
+    mic.classList.add("on");
+    mic.setAttribute("aria-label", "Stop dictating");
+    try { r.start(); } catch { /* already listening */ }
+  });
+})();
 
 // ---- alerts: toast and system notification ----
 
@@ -216,6 +358,7 @@ function announce(alert) {
 $("toast").addEventListener("click", () => $("toast").classList.remove("show"));
 
 $("alerts").addEventListener("click", async (e) => {
+  if (e.target.closest("[data-reply]")) return focusComposer();
   const btn = e.target.closest("[data-ack]");
   if (!btn) return;
   btn.disabled = true;
@@ -275,7 +418,16 @@ $("digestBtn").addEventListener("click", async () => {
   }
 });
 
-// ---- demo reset (two taps, no modal) ----
+// ---- demo tools ----
+
+$("checkin").addEventListener("click", async () => {
+  const btn = $("checkin");
+  const res = await fetch("/api/demo/checkin", { method: "POST" });
+  btn.textContent = res.ok ? "Kin will check in on the speaker" : "Demo tools are off here";
+  setTimeout(() => (btn.textContent = "Have Kin check in now"), 3500);
+});
+
+// Reset takes two taps instead of a modal dialog
 
 let resetArmed;
 $("reset").addEventListener("click", async () => {
@@ -294,6 +446,8 @@ $("reset").addEventListener("click", async () => {
   const res = await fetch("/api/demo/reset", { method: "POST" });
   if (!res.ok) return reveal($("answer"), (await res.json().catch(() => ({}))).error || "Reset failed.");
   seenAlerts.clear();
+  seenMessages.clear();
+  threadKey = "";
   firstLoad = true;
   lastKey = "";
   $("digest").textContent = "";

@@ -44,6 +44,8 @@ test("exposes the documented tools and resources", async () => {
     "log_note",
     "log_sleep",
     "log_symptom",
+    "message_family",
+    "message_parent",
     "notify_family",
     "schedule_reminder",
   ]);
@@ -77,6 +79,19 @@ test("family briefing includes the alert and the parent's own words", async () =
   const res = await call("get_family_briefing");
   assert.ok(res.structuredContent.recentAlerts.length >= 1);
   assert.ok(res.structuredContent.recentlySaid.some((s: any) => /Dizzy again/.test(s.said)));
+});
+
+test("family and parent can message each other through Kin", async () => {
+  const toParent = await call("message_parent", { text: "I'll call you at 7", from: "Priya" });
+  assert.equal(toParent.structuredContent.queued, true);
+  const ctx = await call("get_care_context");
+  assert.ok(ctx.structuredContent.messagesFromFamily.some((m: any) => m.from === "Priya" && m.text === "I'll call you at 7" && !m.readAloud));
+
+  const toFamily = await call("message_family", { text: "I'm feeling better now" });
+  assert.equal(toFamily.structuredContent.sent, true);
+  assert.equal(toFamily.structuredContent.channel, "dashboard"); // no SNS topic in tests
+  const briefing = await call("get_family_briefing");
+  assert.ok(briefing.structuredContent.messagesFromParent.some((m: any) => m.text === "I'm feeling better now"));
 });
 
 test("reminders can be scheduled by delay or clock time", async () => {

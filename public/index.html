@@ -3,93 +3,52 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="color-scheme" content="dark" />
-  <meta name="theme-color" content="#0a0b0e" />
+  <meta name="color-scheme" content="light dark" />
   <title>Kin</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%232b6a86'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="base.css" />
-  <link rel="stylesheet" href="device.css" />
+  <link rel="stylesheet" href="family.css" />
 </head>
-<body class="device">
-  <header class="topbar">
-    <div class="clock">
-      <div class="t" id="clock"></div>
-      <div class="d" id="date"></div>
-    </div>
-    <div class="actions">
-      <button class="ghost" id="paceBtn" aria-label="Speaking pace">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 13.5a6.5 6.5 0 1 1 13 0M10 13.5l3-4"/></svg>
-        <span class="label" id="paceLabel">Natural pace</span>
-      </button>
-      <button class="ghost" id="traceBtn" aria-expanded="false" aria-controls="sheet">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5h12M4 10h12M4 13.5h7"/></svg>
-        <span class="label">Behind the scenes</span><span class="count" id="count"></span>
-      </button>
-      <a class="ghost" href="family.html" target="_blank" rel="noopener">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 5H5.8A1.8 1.8 0 0 0 4 6.8v7.4A1.8 1.8 0 0 0 5.8 16h7.4a1.8 1.8 0 0 0 1.8-1.8V12.5M11 4h5v5M16 4l-6.5 6.5"/></svg>
-        <span class="label">Family view</span>
-      </a>
-    </div>
+<body class="family home">
+  <header class="bar">
+    <div class="bar-in"><span class="mark">Kin</span></div>
   </header>
 
-  <main class="stage">
-    <div class="orb-wrap">
-      <button class="orb" id="orb" aria-label="Talk to Kin">
-        <span class="halo"></span>
-        <span class="body"><span class="sheen"></span></span>
-        <span class="ripple"></span><span class="ripple"></span>
-      </button>
-      <div class="status-line" id="status" aria-live="polite">Tap to talk</div>
-    </div>
+  <main class="home-main">
+    <p class="eyebrow">A care companion on Alexa+</p>
+    <h1 id="headline">Everyday conversations, turned into care the family can see.</h1>
+    <p class="intro" id="intro">The person you care for just talks to their speaker. Kin remembers, notices patterns over days, and tells the family when something needs a call.</p>
 
-    <div class="caption" aria-live="polite">
-      <p class="you swap" id="you"></p>
-      <p class="kin swap" id="kin"></p>
-    </div>
-
-    <div class="notified" id="notified" role="status">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8a4.5 4.5 0 0 1 9 0c0 4 1.5 5 1.5 5h-12s1.5-1 1.5-5ZM8.5 16a1.7 1.7 0 0 0 3 0"/></svg>
-      <span id="notifiedText"></span>
+    <div class="choices">
+      <a class="choice speaker" href="speaker.html" style="--i:0">
+        <svg class="go-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg>
+        <span class="art"></span>
+        <h2 id="speakerTitle">The speaker</h2>
+        <p id="speakerText">The Echo in their home, simulated in your browser. Talk to Kin by voice, the way they would.</p>
+      </a>
+      <a class="choice family-c" href="family.html" style="--i:1">
+        <svg class="go-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg>
+        <span class="art"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="9.5" r="3.5"/><circle cx="19.5" cy="11" r="2.8"/><path d="M3.5 22c.8-3.8 3.4-6 6.5-6s5.7 2.2 6.5 6M16.5 17.2c.9-.6 1.9-.9 3-.9 2.5 0 4.4 1.8 5 4.7"/></svg></span>
+        <h2>Family view</h2>
+        <p id="familyText">How they're doing, what Kin noticed and why, and messages that Kin reads aloud to them.</p>
+      </a>
     </div>
   </main>
 
-  <footer class="dock">
-    <div class="composer" id="composer">
-      <form id="composerForm" autocomplete="off">
-        <input id="text" placeholder="Type what you would say…" aria-label="Type a message to Kin" tabindex="-1" />
-        <button class="send" type="submit" aria-label="Send">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9"/></svg>
-        </button>
-      </form>
-    </div>
-    <div class="suggest-label">Try saying</div>
-    <div class="chips" id="chips">
-      <button>I slept only about four hours</button>
-      <button>I took my Metformin after breakfast</button>
-      <button>I'm feeling dizzy again, the room is spinning a little</button>
-      <button>I think I forgot my BP tablet yesterday</button>
-      <button>Remind me to call Priya at 7 in the evening</button>
-    </div>
-    <button class="ghost" id="typeBtn" aria-expanded="false" aria-controls="composer">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="15" height="9" rx="2"/><path d="M5.5 8.5h.01M8.5 8.5h.01M11.5 8.5h.01M14.5 8.5h.01M6.5 11.5h7"/></svg>
-      <span>Type instead</span>
-    </button>
-    <p class="hint" id="hint"></p>
-  </footer>
+  <p class="home-foot">Built on the Model Context Protocol and Amazon Bedrock. The speaker is simulated in the browser for this demo.</p>
 
-  <aside class="sheet" id="sheet" aria-label="Behind the scenes" aria-hidden="true" inert>
-    <header>
-      <div>
-        <h2>Behind the scenes</h2>
-        <p>Every tool Kin calls on the MCP server, as it happens.</p>
-      </div>
-      <button class="x" id="closeSheet" aria-label="Close">
-        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m3 3 8 8M11 3l-8 8"/></svg>
-      </button>
-    </header>
-    <div class="turns" id="turns"><p class="empty-turns" id="emptyTurns">Tool calls show up here once you talk to Kin.</p></div>
-  </aside>
-
-  <script src="app.js"></script>
+  <script>
+    fetch("/api/family/overview")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const p = d && d.profile;
+        if (!p) return;
+        const family = p.family.map((f) => f.name);
+        document.getElementById("speakerTitle").textContent = `${p.preferredName}'s speaker`;
+        document.getElementById("speakerText").textContent = `The Echo in ${p.preferredName}'s home${p.city ? ` in ${p.city}` : ""}, simulated in your browser. Talk to Kin the way ${p.preferredName} would.`;
+        if (family.length) document.getElementById("familyText").textContent = `For ${family.join(" and ")}: how ${p.preferredName} is doing, what Kin noticed and why, and messages Kin reads aloud.`;
+      })
+      .catch(() => {});
+  </script>
 </body>
 </html>
