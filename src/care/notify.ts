@@ -2,7 +2,9 @@ import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
 import { config } from "../config.js";
 import type { Alert, Profile } from "../types.js";
 
-const sns = config.snsTopicArn ? new SNSClient({ region: config.region }) : undefined;
+// The topic lives in whichever region it was created in; its ARN says which (arn:aws:sns:<region>:...)
+const topicRegion = config.snsTopicArn.split(":")[3] || config.region;
+const sns = config.snsTopicArn ? new SNSClient({ region: topicRegion }) : undefined;
 
 /** Delivers an alert to the family. Every alert also shows on the family dashboard. */
 export async function notifyFamily(profile: Profile, alert: Omit<Alert, "channel">): Promise<Alert["channel"]> {
