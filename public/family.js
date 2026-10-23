@@ -41,7 +41,7 @@ function render({ profile, insights, alerts, recent }) {
         .map((a) => {
           const isNew = !firstLoad && !seenAlerts.has(a.id);
           return `<div class="alert-item${!a.acknowledged ? " new" : ""}" data-new="${isNew}">
-            <div class="row"><span class="pill lvl-${a.level}">${a.level}</span><span class="when">${timeAgo(a.ts)} · ${a.channel === "sns" ? "sent by SMS/email" : "dashboard"}</span></div>
+            <div class="row"><span class="pill lvl-${a.level}">${a.level}</span><span class="when">${timeAgo(a.ts)} · ${a.channel === "sns" ? "emailed via Amazon SNS" : "dashboard"}</span></div>
             <div class="title">${esc(a.title)}</div>
             <div>${esc(a.message)}</div>
             ${a.reasons.length ? `<ul>${a.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}

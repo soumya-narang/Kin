@@ -9,7 +9,7 @@
     "seed": "tsx src/seed.ts",
     "typecheck": "tsc --noEmit",
     "inspect": "npx @modelcontextprotocol/inspector",
-    "test": "tsx --test test/*.test.ts"
+    "test": "tsx --import ./test/setup.ts --test test/*.test.ts"
   },
   "author": "",
   "license": "MIT",

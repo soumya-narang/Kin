@@ -34,10 +34,10 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 
 ## 1:10 to 1:55. The pattern
 
-**Screen:** Switch to the family dashboard. Show the 14-day timeline: BP tablet missed twice in the last four days, dizziness twice, mood and sleep trending down.
+**Screen:** Switch to the family dashboard. Show the 14-day timeline: red marks on the blood-pressure tablet, dizziness showing up, mood and sleep trending down. (Exact counts shift with the time of day, so point at the pattern and do not read numbers.)
 
 **Voiceover:**
-"Two weeks of logs sit in Kin's care record. In the last four days Kamala missed her blood-pressure tablet twice, reported dizziness twice, and her mood and sleep have slipped. No single conversation shows this. Kin's care engine does."
+"Two weeks of logs sit in Kin's care record. Over the last few days Kamala has missed her blood-pressure tablet, reported dizziness, and her mood and sleep have slipped. No single conversation shows this. Kin's care engine does."
 
 **Screen:** Back to the parent device.
 
@@ -53,7 +53,7 @@ Target runtime: 3:00. Roughly 380 spoken words. Screen recording with voiceover;
 **Screen:** Show the phone or inbox with the SNS message arriving, then the dashboard alert.
 
 **Voiceover:**
-"Her daughter gets a message through Amazon SNS. It doesn't just say 'alert'. It says why: dizziness three times this week, two of them on or right after a missed blood-pressure dose. The dashboard shows the same finding with Kamala's own words."
+"Her daughter gets a message through Amazon SNS. It doesn't just say 'alert'. It says why: dizziness three times this week, each on or right after a missed blood-pressure dose. The dashboard shows the same finding with Kamala's own words."
 
 **Screen:** In **Ask Kin**, type or say: "How has Mum been sleeping?" Show the answer and the daily digest.
 

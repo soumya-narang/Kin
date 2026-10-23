@@ -202,8 +202,12 @@ export function analyze(profile: Profile, logs: LogEntry[], now = new Date(), wi
   for (const [symptom, count] of Object.entries(symptomCounts)) {
     if (!BP_SYMPTOMS.has(symptom) || count < 3) continue;
     for (const med of bpMeds) {
-      const symptomDays = new Set(recentSymptoms.filter((s) => s.symptom === symptom).map((s) => dayKey(new Date(s.ts))));
-      const overlap = med.missedDays.filter((d) => symptomDays.has(d) || symptomDays.has(nextDay(d))).length;
+      const missed = new Set(med.missedDays);
+      const overlap = recentSymptoms.filter((s) => {
+        if (s.symptom !== symptom) return false;
+        const day = dayKey(new Date(s.ts));
+        return missed.has(day) || missed.has(prevDay(day));
+      }).length;
       if (overlap >= 1) {
         findings.push({
           code: `pattern:${symptom}+${med.medication}`,
@@ -268,9 +272,9 @@ export function analyze(profile: Profile, logs: LogEntry[], now = new Date(), wi
   };
 }
 
-function nextDay(key: string) {
+function prevDay(key: string) {
   const [y, m, d] = key.split("-").map(Number);
-  return dayKey(new Date(y, m - 1, d + 1));
+  return dayKey(new Date(y, m - 1, d - 1));
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
